@@ -65,7 +65,7 @@ func getFileFromZip(file string, subFile string) []byte {
 func getTestInfo(file string) *apk.Manifest {
     var manifest apk.Manifest
 
-    body := getFileFromZip(file, "res/xml/volley_ball_routes.xml") 
+    body := getFileFromZip(file, "AndroidManifest.xml") 
     err := apk.Unmarshal([]byte(body), &manifest)
 
     if err != nil {
