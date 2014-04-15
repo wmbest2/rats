@@ -9,7 +9,6 @@ import (
     "os"
     "archive/zip"
     "io/ioutil"
-    "encoding/xml"
 )
 
 func runOnDevice(wg *sync.WaitGroup, d *adb.Device, params []string) {
@@ -34,7 +33,7 @@ func install(file string) {
     runOnAll("install", file)
 }
 
-func getReaderFromZip(file string, subFile string) []byte {
+func getFileFromZip(file string, subFile string) []byte {
     r, err := zip.OpenReader(file)
     if err != nil {
         log.Fatal(err)
@@ -63,12 +62,11 @@ func getReaderFromZip(file string, subFile string) []byte {
 }
 
 func getTestInfo(file string) *apk.Manifest {
-    body := getReaderFromZip(file, "AndroidManifest.xml") 
-    manifest_body := apk.DecompressXML(body)
-
     var manifest apk.Manifest
 
-    err := xml.Unmarshal([]byte(manifest_body), &manifest)
+    body := getFileFromZip(file, "AndroidManifest.xml") 
+    err := apk.Unmarshal([]byte(body), &manifest)
+
     if err != nil {
             fmt.Printf("error: %v", err)
             return nil
