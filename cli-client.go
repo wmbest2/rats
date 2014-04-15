@@ -1,14 +1,15 @@
 package main
 
 import (
-    "github.com/wmbest2/adb"
-    "github.com/wmbest2/adb/apk"
+    "github.com/wmbest2/android/adb"
+    "github.com/wmbest2/android/apk"
     "fmt"
     "sync"
     "log"
     "os"
     "archive/zip"
     "io/ioutil"
+    "encoding/xml"
 )
 
 func runOnDevice(wg *sync.WaitGroup, d *adb.Device, params []string) {
@@ -42,7 +43,7 @@ func getFileFromZip(file string, subFile string) []byte {
 
     // Iterate through the files in the archive,
     // printing some of their contents.
-    for _, f := range r.File {
+        for _, f := range r.File {
         if (f.Name == subFile) {
             var body []byte
             rc, err := f.Open()
@@ -64,7 +65,7 @@ func getFileFromZip(file string, subFile string) []byte {
 func getTestInfo(file string) *apk.Manifest {
     var manifest apk.Manifest
 
-    body := getFileFromZip(file, "AndroidManifest.xml") 
+    body := getFileFromZip(file, "res/xml/volley_ball_routes.xml") 
     err := apk.Unmarshal([]byte(body), &manifest)
 
     if err != nil {
@@ -85,14 +86,17 @@ func main() {
         return
     }
 
-    for _, arg := range os.Args[1:] {
-        install(arg)
-    }
+    /*for _, arg := range os.Args[1:] {*/
+        /*install(arg)*/
+    /*}*/
 
     testFile := os.Args[len(os.Args) -1]
     manifest := getTestInfo(testFile)
 
-    fmt.Printf("Test File: %s\n", testFile)
-    fmt.Printf("Test Package: %s\n", manifest.Package)
-    fmt.Printf("Instrumentation: %s\n", manifest.Instrument.Name)
+    o, _ := xml.Marshal(manifest)
+    fmt.Printf("Manifest: %s",o)
+
+    /*fmt.Printf("Test File: %s\n", testFile)*/
+    /*fmt.Printf("Test Package: %s\n", manifest.Package)*/
+    /*fmt.Printf("Instrumentation: %s\n", manifest.Instrument.Name)*/
 }

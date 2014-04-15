@@ -1,7 +1,7 @@
 package main
 
 import (
-    "github.com/wmbest2/adb"
+    "github.com/wmbest2/android/adb"
     "time"
     "sync"
 )
@@ -11,7 +11,7 @@ var deviceLock sync.Mutex
 
 func updateDevices() {
     deviceLock.Lock()
-    devices = adb.AdbDevices(nil)
+    devices = adb.ListDevices(nil)
     deviceLock.Unlock()
 }
 
