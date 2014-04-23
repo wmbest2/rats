@@ -9,7 +9,6 @@ import (
 	"os"
 )
 
-
 func runTests(manifest *apk.Manifest) *test.TestSuites {
 	out := make(chan *test.TestSuite)
 	suites := &test.TestSuites{}
@@ -24,7 +23,7 @@ func runTests(manifest *apk.Manifest) *test.TestSuites {
 		suites.Time += suite.Time
 	}
 
-    return suites
+	return suites
 }
 
 func main() {
@@ -44,11 +43,11 @@ func main() {
 	testFile := os.Args[len(os.Args)-1]
 	manifest := rats.GetManifest(testFile)
 
-    s := runTests(manifest)
-    str, err := xml.Marshal(s)
-    if err == nil {
-        fmt.Println(string(str))
-    }
+	s := runTests(manifest)
+	str, err := xml.Marshal(s)
+	if err == nil {
+		fmt.Println(string(str))
+	}
 
 	rats.Uninstall(manifest.Package)
 	rats.Uninstall(manifest.Instrument.Target)

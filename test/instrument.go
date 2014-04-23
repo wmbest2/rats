@@ -1,13 +1,13 @@
 package test
 
 import (
+	"fmt"
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
-	"time"
 	"regexp"
 	"strconv"
 	"strings"
-	"fmt"
+	"time"
 )
 
 const (
@@ -137,6 +137,6 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 func RunTest(device *adb.Device, manifest *apk.Manifest, out chan *TestSuite) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-w", testRunner)
-    suite := TestSuite{Hostname: device.Serial, Name: device.String()}
+	suite := TestSuite{Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in, out)
 }

@@ -75,4 +75,3 @@ func GetManifest(file string) *apk.Manifest {
 
 	return &manifest
 }
-

@@ -19,7 +19,7 @@ type TestCase struct {
 	Time      float64  `xml:"time,attr"`
 	Failure   *Failure `xml:"failure,omitempty"`
 	Error     *Error   `xml:"error,omitempty"`
-    Stack     string   `xml:"-"`
+	Stack     string   `xml:"-"`
 }
 
 type TestSuite struct {
@@ -34,7 +34,7 @@ type TestSuite struct {
 }
 
 type TestSuites struct {
-	XMLName   xml.Name `xml:"testsuites"`
-	TestSuites []*TestSuite 
-	Time       float64   `xml:"time,attr"`
+	XMLName    xml.Name `xml:"testsuites"`
+	TestSuites []*TestSuite
+	Time       float64 `xml:"time,attr"`
 }
