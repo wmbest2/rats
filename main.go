@@ -26,7 +26,10 @@ func serveStatic(m *martini.Martini) {
 func main() {
 	go rats.UpdateAdb(5)
 
-	m := martini.Classic()
+	m := martini.New()
+    m.Use(martini.Recovery())
+	m.Use(martini.Logger())
+    serveStatic(m)
 	r := martini.NewRouter()
 	r.Get(`/api/devices`, GetDevices)
 	m.Action(r.Handle)
