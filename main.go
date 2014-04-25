@@ -9,6 +9,15 @@ import (
     "path/filepath"
 )
 
+func RunTests(w http.ResponseWriter, r *http.Request) {
+    apk, header,_ := r.FormFile("apk")
+    test_apk, test_header, err := r.FormFile("test-apk")
+
+    if err != nil {
+        panic(err)
+    }
+}
+
 func GetDevices(parms martini.Params) (int, string) {
 	rats.DeviceLock.Lock()
 	b, _ := json.Marshal(rats.Devices)
@@ -32,6 +41,7 @@ func main() {
     serveStatic(m)
 	r := martini.NewRouter()
 	r.Get(`/api/devices`, GetDevices)
+    r.Post("/api/run", RunTests)
 	m.Action(r.Handle)
 	m.Run()
 }

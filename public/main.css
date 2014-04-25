@@ -4,86 +4,44 @@
     margin-left: 15px;
 }
 
-.sidebar {
-    background-color: #666666;
-    height: 100%;
-}
-
 .search {
     float: right;
-}
-
-.menu-group {
-    line-height: 0.5;
-    text-align: center;
-}
-.menu-group span {
-    display: inline-block;
-    color:#333;
-    text-shadow: 0px 1px #777;
-    position: relative;  
-    font-family: 'Open Sans Condensed', sans-serif;
-    font-weight: 300; 
-}
-.menu-group span:before,
-.menu-group span:after {
-    content: "";
-    position: absolute;
-    height: 1px;
-    background: #333;
-    border-top: 1px solid #333;
-    border-bottom: 1px solid #777;
-    top: 50%;
-    width: 30px;
-}
-
-.menu-group span:before {
-    right: 100%;
-    margin-left: 15px;
-    margin-right: 15px;
-}
-.menu-group span:after {
-    left: 100%;
-    margin-left: 15px;
-    margin-right: 15px;
 }
 
 .title {
     background: #00D256;
     color:#fff;
-    border-bottom: 1px solid rgba(0,0,0,.2);
+    border-top: 2px solid rgba(255,255,255,.2);
     text-shadow: 0 1px 0 rgba(0,0,0,.1);
+    margin-top: 15px;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
 }
 
-.sidebar {
-    padding-top: 30px;
-    padding-right:0px;
-    border-right: 1px solid rgba(255,255,255,.4);
+nav {
+    margin-left: -15px;
+    margin-right: -15px;
 }
 
-ul.menu {
+nav > ul {
+    background-color: #EFF0E8;
     list-style-type:none;
-    margin:0;
-    padding:0;
+    width: 100%;
+    margin:0px;
+    padding:0px;
 }
 
-ul.menu>li:hover {
+nav > ul > li {
+    position: relative;
+    padding: 10;
+    vertical-align:center;
+}
+
+nav > ul > li:hover {
     background:#555;
 }
 
-ul.menu > li:first-child {
-    margin-top:15px;
-}
-
-ul.menu>li {
-    height: 40px;
-    position: relative;
-    display: block;
-    padding-top: 15px;
-    padding-left: 15px;
-}
-
-.menu>li>a {
+nav > ul > li > a {
     position: relative;
     color:#999;
     padding-bottom: 15px;
@@ -91,4 +49,38 @@ ul.menu>li {
 
 .content {
     padding-top: 20px;
+}
+
+@media (max-width: 1200px) { 
+    nav > ul > li {
+        display: inline-block;
+    }
+}
+
+@media (min-width: 1200px) { 
+    nav {
+        padding-top:30px;
+    }
+
+    nav > ul:before {
+        content: '';
+        position: absolute;
+        width: 50%;
+        left: 25%;
+        top: 20px;
+        border-bottom: 1px solid #ebebeb;
+    }
+
+    nav > ul:after {
+        content: '';
+        position: absolute;
+        width: 50%;
+        left: 25%;
+        bottom: -20px;
+        border-bottom: 1px solid #ebebeb;
+    }
+
+    nav > ul {
+        background-color: #ffffff;
+    }
 }
