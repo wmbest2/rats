@@ -13,11 +13,12 @@ func runTests(manifest *apk.Manifest) *test.TestSuites {
 	out := make(chan *test.TestSuite)
 	suites := &test.TestSuites{}
 
-	for _, d := range rats.Devices {
+    devices := <-rats.GetDevices()
+	for _, d := range devices {
 		go test.RunTest(d, manifest, out)
 	}
 
-	for _ = range rats.Devices {
+	for _ = range devices {
 		suite := <-out
 		suites.TestSuites = append(suites.TestSuites, suite)
 		suites.Time += suite.Time
@@ -27,7 +28,7 @@ func runTests(manifest *apk.Manifest) *test.TestSuites {
 }
 
 func main() {
-	rats.UpdateDevices()
+	rats.PollDevices()
 
 	argCount := len(os.Args)
 	if argCount != 2 && argCount != 3 {

@@ -17,13 +17,11 @@ func RunOnDevice(wg *sync.WaitGroup, d *adb.Device, params []string) {
 
 func RunOnAll(params ...string) {
 	var wg sync.WaitGroup
-	DeviceLock.Lock()
-	for _, d := range Devices {
+	for _, d := range <-GetDevices() {
 		wg.Add(1)
 		go RunOnDevice(&wg, d, params)
 	}
 	wg.Wait()
-	DeviceLock.Unlock()
 }
 
 func Install(file string) {

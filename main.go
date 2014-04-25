@@ -10,18 +10,16 @@ import (
 )
 
 func RunTests(w http.ResponseWriter, r *http.Request) {
-    apk, header,_ := r.FormFile("apk")
-    test_apk, test_header, err := r.FormFile("test-apk")
+    //apk, header,_ := r.FormFile("apk")
+    //test_apk, test_header, err := r.FormFile("test-apk")
 
-    if err != nil {
-        panic(err)
-    }
+    //if err != nil {
+        //panic(err)
+    //}
 }
 
 func GetDevices(parms martini.Params) (int, string) {
-	rats.DeviceLock.Lock()
-	b, _ := json.Marshal(rats.Devices)
-	rats.DeviceLock.Unlock()
+	b, _ := json.Marshal(<-rats.GetDevices())
 	return http.StatusOK, string(b)
 }
 
