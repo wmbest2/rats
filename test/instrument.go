@@ -134,6 +134,24 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 	out <- suite
 }
 
+func RunTests(manifest *apk.Manifest) *TestSuites {
+	out := make(chan *TestSuite)
+	suites := &TestSuites{}
+
+    devices := <-rats.GetDevices()
+	for _, d := range devices {
+		go RunTest(d, manifest, out)
+	}
+
+	for _ = range devices {
+		suite := <-out
+		suites.TestSuites = append(suites.TestSuites, suite)
+		suites.Time += suite.Time
+	}
+
+	return suites
+}
+
 func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true","-w", testRunner)

@@ -5,36 +5,36 @@ import (
 )
 
 type Error struct {
-	Contents string `xml:",chardata"`
+	Contents string `xml:",chardata" json:"data"`
 }
 
 type Failure struct {
-	Contents string `xml:",chardata"`
+    Contents string `xml:",chardata" json:"data"`
 }
 
 type TestCase struct {
-	XMLName   xml.Name `xml:"testcase"`
-	Classname string   `xml:"classname,attr"`
-	Name      string   `xml:"name,attr"`
-	Time      float64  `xml:"time,attr"`
-	Failure   *Failure `xml:"failure,omitempty"`
-	Error     *Error   `xml:"error,omitempty"`
-	Stack     string   `xml:"-"`
+    XMLName   xml.Name `xml:"testcase" json:"-"`
+    Classname string   `xml:"classname,attr" json:"classname"`
+    Name      string   `xml:"name,attr" json:"name"`
+    Time      float64  `xml:"time,attr" json:"time"`
+    Failure   *Failure `xml:"failure,omitempty" json:"failure"`
+    Error     *Error   `xml:"error,omitempty" json:"error"`
+    Stack     string   `xml:"-" json:"-"`
 }
 
 type TestSuite struct {
-	XMLName   xml.Name `xml:"testsuite"`
-	Tests     int      `xml:"tests,attr"`
-	Failures  int      `xml:"failures,attr"`
-	Errors    int      `xml:"errors,attr"`
-	Hostname  string   `xml:"hostname,attr"`
-	Time      float64  `xml:"time,attr"`
-	Name      string   `xml:"name,attr"`
-	TestCases []*TestCase
+    XMLName   xml.Name `xml:"testsuite" json:"-"`
+    Tests     int      `xml:"tests,attr" json:"tests"`
+    Failures  int      `xml:"failures,attr" json:"failures"`
+    Errors    int      `xml:"errors,attr" json:"errors"`
+    Hostname  string   `xml:"hostname,attr" json:"host"`
+	Time      float64  `xml:"time,attr" json"time"`
+	Name      string   `xml:"name,attr" json"name"`
+	TestCases []*TestCase `json:"cases"`
 }
 
 type TestSuites struct {
-	XMLName    xml.Name `xml:"testsuites"`
-	TestSuites []*TestSuite
+    XMLName    xml.Name `xml:"testsuites" json:"-"`
+	TestSuites []*TestSuite `json:"suites"`
 	Time       float64 `xml:"time,attr"`
 }

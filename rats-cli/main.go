@@ -9,24 +9,6 @@ import (
 	"os"
 )
 
-func runTests(manifest *apk.Manifest) *test.TestSuites {
-	out := make(chan *test.TestSuite)
-	suites := &test.TestSuites{}
-
-    devices := <-rats.GetDevices()
-	for _, d := range devices {
-		go test.RunTest(d, manifest, out)
-	}
-
-	for _ = range devices {
-		suite := <-out
-		suites.TestSuites = append(suites.TestSuites, suite)
-		suites.Time += suite.Time
-	}
-
-	return suites
-}
-
 func main() {
 	rats.PollDevices()
 
@@ -44,7 +26,7 @@ func main() {
 	testFile := os.Args[len(os.Args)-1]
 	manifest := rats.GetManifest(testFile)
 
-	s := runTests(manifest)
+	s := rats.RunTests(manifest)
 	str, err := xml.Marshal(s)
 	if err == nil {
 		fmt.Println(string(str))
