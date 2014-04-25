@@ -2,12 +2,12 @@ package test
 
 import (
 	"fmt"
-	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+    "github.com/wmbest2/rats_server/rats"
 )
 
 const (
@@ -134,14 +134,14 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 	out <- suite
 }
 
-func LogTestSuite(device *adb.Device, manifest *apk.Manifest, out chan *TestSuite) {
+func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true","-w", testRunner)
 	suite := TestSuite{Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in, out)
 }
 
-func RunTest(device *adb.Device, manifest *apk.Manifest, out chan *TestSuite) {
+func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-w", testRunner)
 	suite := TestSuite{Hostname: device.Serial, Name: device.String()}

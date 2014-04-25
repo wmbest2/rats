@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-func RunOnDevice(wg *sync.WaitGroup, d *adb.Device, params []string) {
+func RunOnDevice(wg *sync.WaitGroup, d adb.AdbRunner, params []string) {
 	defer wg.Done()
 	d.ExecSync(params...)
 }

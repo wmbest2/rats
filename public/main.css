@@ -1,4 +1,4 @@
-.title h1 { 
+.title h1,.title h3 { 
     font-family: 'Open Sans Condensed', sans-serif;
     font-weight: 700; 
     margin-left: 15px;
