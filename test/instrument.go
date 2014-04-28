@@ -109,10 +109,10 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 					endTime = lastToken.Timestamp
 					switch string(lastToken.Value) {
 					case "-2":
-						currentTest.Failure = &Failure{Contents: currentTest.Stack}
+						currentTest.Failure = &currentTest.Stack
 						suite.Failures++
 					case "-1":
-						currentTest.Error = &Error{Contents: currentTest.Stack}
+						currentTest.Error = &currentTest.Stack
 						suite.Errors++
 					}
 
@@ -136,7 +136,7 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 
 func RunTests(manifest *apk.Manifest) *TestSuites {
 	out := make(chan *TestSuite)
-	suites := &TestSuites{}
+    suites := &TestSuites{Success: true}
 
     devices := <-rats.GetDevices()
 	for _, d := range devices {
@@ -147,6 +147,7 @@ func RunTests(manifest *apk.Manifest) *TestSuites {
 		suite := <-out
 		suites.TestSuites = append(suites.TestSuites, suite)
 		suites.Time += suite.Time
+        suites.Success = suites.Success && suite.Failures == 0 && suite.Errors == 0
 	}
 
 	return suites
