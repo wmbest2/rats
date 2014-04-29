@@ -158,7 +158,7 @@ func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, stri
 
 	var runs []*test.TestSuites
 	query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
-	query.Select(bson.M{"name": 1, "project": 1, "timestamp": 1, "time": 1, "success": 1})
+	//query.Select(bson.M{"name": 1, "project": 1, "timestamp": 1, "time": 1, "success": 1})
 	query.Sort("-timestamp")
 	query.All(&runs)
 	b, _ := json.Marshal(runs)

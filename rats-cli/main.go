@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/wmbest2/android/apk"
 	"github.com/wmbest2/rats_server/rats"
 	"github.com/wmbest2/rats_server/test"
 	"os"
@@ -23,10 +22,15 @@ func main() {
 		rats.Install(arg)
 	}
 
+    for _,device := range <-rats.GetDevices() {
+        device.SetScreenOn(true)
+        device.Unlock()
+    }
+
 	testFile := os.Args[len(os.Args)-1]
 	manifest := rats.GetManifest(testFile)
 
-	s := rats.RunTests(manifest)
+	s := test.RunTests(manifest)
 	str, err := xml.Marshal(s)
 	if err == nil {
 		fmt.Println(string(str))
