@@ -12,6 +12,7 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -101,8 +102,8 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, st
 	s := test.RunTests(manifest)
 
 	s.Name = uuid
-    s.Timestamp = time.Now()
-    s.Project = manifest.Instrument.Target
+	s.Timestamp = time.Now()
+	s.Project = manifest.Instrument.Target
 
 	rats.Uninstall(manifest.Package)
 	rats.Uninstall(manifest.Instrument.Target)
@@ -119,24 +120,47 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, st
 	return http.StatusOK, string(str)
 }
 
+func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
+	var runs test.TestSuites
+    q := bson.M{"name": parms["id"]}
+    fmt.Printf("%#v\n", q)
+    query := db.C("runs").Find(q).Limit(1)
+	query.One(&runs)
+    for _, run := range runs.TestSuites {
+        if run.Hostname == parms["device"] {
+            b, _ := json.Marshal(run)
+            return http.StatusOK, string(b)
+        }
+    }
+    return http.StatusNotFound, fmt.Sprintf("Run on Device %s Not Found", parms["device"])
+}
+
+func GetRun(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
+	var runs test.TestSuites
+    query := db.C("runs").Find(bson.M{"name": parms["id"]}).Limit(1)
+	query.One(&runs)
+	b, _ := json.Marshal(runs)
+	return http.StatusOK, string(b)
+}
+
 func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
-    page := 0
-    p := r.URL.Query().Get("page")
-    if p != "" {
-        page,_ = strconv.Atoi(p)
-    }
+	page := 0
+	p := r.URL.Query().Get("page")
+	if p != "" {
+		page, _ = strconv.Atoi(p)
+	}
 
-    size := 25
-    s := r.URL.Query().Get("count")
-    if s != "" {
-        size,_ = strconv.Atoi(s)
-    }
+	size := 25
+	s := r.URL.Query().Get("count")
+	if s != "" {
+		size, _ = strconv.Atoi(s)
+	}
 
-    var runs []*test.TestSuites
-    query :=  db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
-    query.Select(bson.M{"name": 1, "project": 1, "timestamp":1, "time": 1, "success":1})
-    query.Sort("-timestamp")
-    query.All(&runs)
+	var runs []*test.TestSuites
+	query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
+	query.Select(bson.M{"name": 1, "project": 1, "timestamp": 1, "time": 1, "success": 1})
+	query.Sort("-timestamp")
+	query.All(&runs)
 	b, _ := json.Marshal(runs)
 	return http.StatusOK, string(b)
 }
@@ -165,6 +189,19 @@ func main() {
 	r.Get(`/api/devices`, GetDevices)
 	r.Post("/api/run", RunTests)
 	r.Get("/api/runs", GetRuns)
+    r.Get("/api/runs/:id", GetRun)
+    r.Get("/api/runs/:id/:device", GetRunDevice)
+
+	r.Get("/debug/pprof", pprof.Index)
+	r.Get("/debug/pprof/cmdline", pprof.Cmdline)
+	r.Get("/debug/pprof/profile", pprof.Profile)
+	r.Get("/debug/pprof/symbol", pprof.Symbol)
+	r.Post("/debug/pprof/symbol", pprof.Symbol)
+	r.Get("/debug/pprof/block", pprof.Handler("block").ServeHTTP)
+	r.Get("/debug/pprof/heap", pprof.Handler("heap").ServeHTTP)
+	r.Get("/debug/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
+	r.Get("/debug/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
+
 	m.Action(r.Handle)
 	m.Run()
 }

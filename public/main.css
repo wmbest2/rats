@@ -4,6 +4,13 @@
     margin-left: 15px;
 }
 
+h4 { 
+    font-family: 'Open Sans Condensed', sans-serif;
+    font-weight: 300; 
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
 .search {
     float: right;
 }

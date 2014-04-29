@@ -1,7 +1,7 @@
 <h4>Test Runs</h4>
 <div class="list-group" ng-controller="RunsController">
-    <div  class="list-group-item" ng-repeat="run in runs" ng-class="{'list-group-item-danger': !run.success, 'list-group-item-success': run.success}">
+    <a style="display:block" ng-href="#runs/{{run.name}}" class="list-group-item" ng-repeat="run in runs" ng-class="{'list-group-item-danger': !run.success, 'list-group-item-success': run.success}">
         <span>{{ run.project }}</span>
         <span style="float:right">in {{ run.time | number:2 }} seconds</span>
-    </div>
+    </a>
 </div>

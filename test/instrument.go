@@ -156,13 +156,13 @@ func RunTests(manifest *apk.Manifest) *TestSuites {
 func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true","-w", testRunner)
-	suite := TestSuite{Hostname: device.Serial, Name: device.String()}
+    suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in, out)
 }
 
 func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-w", testRunner)
-	suite := TestSuite{Hostname: device.Serial, Name: device.String()}
+	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in, out)
 }

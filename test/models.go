@@ -3,6 +3,7 @@ package test
 import (
 	"encoding/xml"
     "time"
+    "github.com/wmbest2/rats_server/rats"
 )
 
 type TestCase struct {
@@ -23,6 +24,7 @@ type TestSuite struct {
 	Hostname  string      `xml:"hostname,attr" json:"host"`
     Time      float64     `xml:"time,attr" json:"time"`
 	Name      string      `xml:"name,attr" json:"name"`
+    Device    *rats.Device `xml:"-" json:"device,omitempty"`
 	TestCases []*TestCase `json:"cases"`
 }
 

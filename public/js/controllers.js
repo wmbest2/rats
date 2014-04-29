@@ -11,6 +11,14 @@ ratsApp.config(function($routeProvider, $locationProvider) {
     })
 
     // route for the devices page
+    .when('/runs/:id/:device', {
+        templateUrl : 'pages/suite-details.html',
+        controller  : 'RunsController'
+    })
+    .when('/runs/:id', {
+        templateUrl : 'pages/run-details.html',
+        controller  : 'RunsController'
+    })
     .when('/runs', {
         templateUrl : 'pages/runs-list.html',
         controller  : 'RunsController'
@@ -32,6 +40,18 @@ ratsApp.controller('DeviceController', ['$scope', 'Devices', function ($scope, D
     $scope.devices = Devices.query();
 }]);
 
-ratsApp.controller('RunsController', ['$scope', 'Runs', function ($scope, Runs) {
-    $scope.runs = Runs.query();
+ratsApp.controller('RunsController', ['$scope', '$routeParams', 'Runs', function ($scope, $routeParams, Runs) {
+    if ($routeParams.id === undefined && $routeParams.device === undefined) {
+        $scope.runs = Runs.query();
+    } else {
+        $scope.run = Runs.get({id: $routeParams.id, device: $routeParams.device});
+        console.log($scope.run)
+    }
+
+    $scope.getSuiteName = function(suite) {
+        if (suite.device === undefined) {
+            return suite.name
+        }
+        return suite.device.manufacturer + " " + suite.device.model
+    }
 }]);
