@@ -99,6 +99,11 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, st
 	rats.Install(f)
 	manifest := rats.GetManifest(f)
 
+    for _,device := range <-rats.GetDevices() {
+        device.SetScreenOn(true)
+        device.Unlock()
+    }
+
 	s := test.RunTests(manifest)
 
 	s.Name = uuid
