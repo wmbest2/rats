@@ -47,10 +47,7 @@ func Mongo(db string) martini.Handler {
 	}
 }
 
-func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
-	//file, err := os.Create("memprof")
-	//if err != nil { log.Fatal(err) }
-
+func makeTestFolder() (string, string) {
 	uuid, err := uuid()
 	if err != nil {
 		panic(err)
@@ -58,15 +55,16 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 
 	dir := fmt.Sprintf("test_runs/%s", uuid)
 	os.MkdirAll(dir, os.ModeDir|os.ModePerm|os.ModeTemporary)
+    return uuid, dir
+}
 
-	apk, _, _ := r.FormFile("apk")
+func saveAndInstall(key string, filename string, r *http.Request) (bool, error) {
+	apk, _, _ := r.FormFile(key)
 	if apk != nil {
-		defer apk.Close()
-		f := fmt.Sprintf("%s/main.apk", dir)
-		apk_file, err := os.Create(f)
+		apk_file, err := os.Create(filename)
 
 		if err != nil {
-			panic(err)
+			return false, err
 		}
 
 		_, err = io.Copy(apk_file, apk)
@@ -74,42 +72,38 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		apk_file.Close()
 
 		if err != nil {
-			panic(err)
+			return false, err
 		}
 
-		rats.Install(f)
+		rats.Install(filename)
+        return true, nil
+	}
+    return false, nil
+}
+
+func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
+	//file, err := os.Create("memprof")
+	//if err != nil { log.Fatal(err) }
+    uuid, dir := makeTestFolder()
+
+	f := fmt.Sprintf("%s/main.apk", dir)
+    _, err := saveAndInstall("apk", f, r)
+	if err != nil {
+		panic(err)
 	}
 
-	test_apk, _, err := r.FormFile("test-apk")
+	f = fmt.Sprintf("%s/test.apk", dir)
+    _, err = saveAndInstall("test-apk", f, r)
 
 	if err != nil {
 		panic("A Test Apk must be supplied")
 	}
 
-	f := fmt.Sprintf("%s/test.apk", dir)
-	test_apk_file, err := os.Create(f)
-
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = io.Copy(test_apk_file, test_apk)
-	test_apk.Close()
-	test_apk_file.Close()
-
-	if err != nil {
-		panic(err)
-	}
-	rats.Install(f)
 	manifest := rats.GetManifest(f)
 
-	for _, device := range <-rats.GetDevices() {
-		device.SetScreenOn(true)
-		device.Unlock()
-	}
+    rats.Unlock(<-rats.GetDevices())
 
 	s := test.RunTests(manifest)
-
 	s.Name = uuid
 	s.Timestamp = time.Now()
 	s.Project = manifest.Instrument.Target

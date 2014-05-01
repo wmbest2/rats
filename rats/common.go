@@ -25,6 +25,13 @@ func RunOnAll(params ...string) {
 	wg.Wait()
 }
 
+func Unlock(devices []*Device) {
+	for _, device := range devices {
+		device.SetScreenOn(true)
+		device.Unlock()
+	}
+}
+
 func Install(file string) {
 	RunOnAll("install", "-r", file)
 }
