@@ -54,7 +54,7 @@ func UpdateAdb(seconds time.Duration) {
 }
 
 func GetAllDevices() chan []*Device {
-    return GetDevices(nil)
+	return GetDevices(nil)
 }
 
 func GetDevices(filter *DeviceFilter) chan []*Device {
@@ -65,14 +65,14 @@ func GetDevices(filter *DeviceFilter) chan []*Device {
 		v := make([]*Device, 0, len(devices))
 		lock.Unlock()
 
-        count := -1
+		count := -1
 		if filter != nil && filter.Count > 0 {
 			count = filter.Count
 		}
 		for {
 			lock.Lock()
 			for _, value := range devices {
-				if (filter == nil || (value.MatchFilter(&filter.DeviceFilter)) && !value.InUse) {
+				if filter == nil || (value.MatchFilter(&filter.DeviceFilter)) && !value.InUse {
 					v = append(v, value)
 					if count > 1 {
 						count--
@@ -83,11 +83,11 @@ func GetDevices(filter *DeviceFilter) chan []*Device {
 			}
 			lock.Unlock()
 
-			if filter == nil || !filter.Strict || count == 0  {
+			if filter == nil || !filter.Strict || count == 0 {
 				break
 			}
 
-            <-time.After(5 * time.Second)
+			<-time.After(5 * time.Second)
 		}
 
 		out <- v

@@ -83,9 +83,9 @@ func save(key string, filename string, r *http.Request) (bool, error) {
 func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
 	uuid, dir := makeTestFolder()
 
-    count,_ := strconv.Atoi(r.FormValue("count"))
-    
-    filter := &rats.DeviceFilter{Count: count}
+	count, _ := strconv.Atoi(r.FormValue("count"))
+
+	filter := &rats.DeviceFilter{Count: count}
 
 	f := fmt.Sprintf("%s/main.apk", dir)
 	install, err := save("apk", f, r)
@@ -94,8 +94,8 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic(err)
 	}
 
-    devices := <-rats.GetDevices(filter)
-    rats.Reserve(devices)
+	devices := <-rats.GetDevices(filter)
+	rats.Reserve(devices)
 
 	if install {
 		rats.Install(f, devices)
@@ -124,7 +124,7 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 
 	rats.Uninstall(manifest.Package, devices)
 	rats.Uninstall(manifest.Instrument.Target, devices)
-    rats.Release(devices)
+	rats.Release(devices)
 
 	os.RemoveAll(dir)
 
@@ -138,12 +138,12 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 
 func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
 	var runs test.TestSuites
-    q := bson.M{"name": parms["id"], "testsuites.hostname": parms["device"]}
+	q := bson.M{"name": parms["id"], "testsuites.hostname": parms["device"]}
 	fmt.Printf("%#v\n", q)
 	query := db.C("runs").Find(q).Limit(1)
 	query.One(&runs)
-    b, _ := json.Marshal(runs.TestSuites[0])
-    return http.StatusOK, b
+	b, _ := json.Marshal(runs.TestSuites[0])
+	return http.StatusOK, b
 }
 
 func GetRun(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
@@ -168,8 +168,8 @@ func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, []by
 	}
 
 	var runs []*test.TestSuites
-    query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
-    query.Select(bson.M{"testsuites.testcases": 0, "testsuites.device.inuse": 0})
+	query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
+	query.Select(bson.M{"testsuites.testcases": 0, "testsuites.device.inuse": 0})
 	query.Sort("-timestamp")
 	query.All(&runs)
 	b, _ := json.Marshal(runs)

@@ -18,24 +18,26 @@ func main() {
 		return
 	}
 
+	devices := <-rats.GetAllDevices()
+
 	for _, arg := range os.Args[1:] {
-		rats.Install(arg)
+		rats.Install(arg, devices)
 	}
 
-    for _,device := range <-rats.GetDevices() {
-        device.SetScreenOn(true)
-        device.Unlock()
-    }
+	for _, device := range devices {
+		device.SetScreenOn(true)
+		device.Unlock()
+	}
 
 	testFile := os.Args[len(os.Args)-1]
 	manifest := rats.GetManifest(testFile)
 
-	s := test.RunTests(manifest)
+	s := test.RunTests(manifest, devices)
 	str, err := xml.Marshal(s)
 	if err == nil {
 		fmt.Println(string(str))
 	}
 
-	rats.Uninstall(manifest.Package)
-	rats.Uninstall(manifest.Instrument.Target)
+	rats.Uninstall(manifest.Package, devices)
+	rats.Uninstall(manifest.Instrument.Target, devices)
 }

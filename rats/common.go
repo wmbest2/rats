@@ -10,7 +10,6 @@ import (
 	"sync"
 )
 
-
 func RunOnDevice(wg *sync.WaitGroup, d adb.AdbRunner, params []string) {
 	defer wg.Done()
 	d.ExecSync(params...)
@@ -26,7 +25,7 @@ func RunOn(devices []*Device, params ...string) {
 }
 
 func RunOnAll(params ...string) {
-    RunOn(<-GetAllDevices(), params...)
+	RunOn(<-GetAllDevices(), params...)
 }
 
 func Unlock(devices []*Device) {

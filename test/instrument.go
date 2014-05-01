@@ -3,11 +3,11 @@ package test
 import (
 	"fmt"
 	"github.com/wmbest2/android/apk"
+	"github.com/wmbest2/rats_server/rats"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-    "github.com/wmbest2/rats_server/rats"
 )
 
 const (
@@ -136,7 +136,7 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 
 func RunTests(manifest *apk.Manifest, devices []*rats.Device) *TestSuites {
 	out := make(chan *TestSuite)
-    suites := &TestSuites{Success: true}
+	suites := &TestSuites{Success: true}
 
 	for _, d := range devices {
 		go RunTest(d, manifest, out)
@@ -146,7 +146,7 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) *TestSuites {
 		suite := <-out
 		suites.TestSuites = append(suites.TestSuites, suite)
 		suites.Time += suite.Time
-        suites.Success = suites.Success && suite.Failures == 0 && suite.Errors == 0
+		suites.Success = suites.Success && suite.Failures == 0 && suite.Errors == 0
 	}
 
 	return suites
@@ -154,8 +154,8 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) *TestSuites {
 
 func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
-	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true","-w", testRunner)
-    suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
+	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
+	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in, out)
 }
 
