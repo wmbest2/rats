@@ -12,7 +12,6 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
-	"net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -48,7 +47,10 @@ func Mongo(db string) martini.Handler {
 	}
 }
 
-func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, string) {
+func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
+    //file, err := os.Create("memprof") 
+    //if err != nil { log.Fatal(err) } 
+
 	uuid, err := uuid()
 	if err != nil {
 		panic(err)
@@ -62,13 +64,15 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, st
 		defer apk.Close()
 		f := fmt.Sprintf("%s/main.apk", dir)
 		apk_file, err := os.Create(f)
-		defer apk_file.Close()
 
 		if err != nil {
 			panic(err)
 		}
 
 		_, err = io.Copy(apk_file, apk)
+        apk.Close()
+		apk_file.Close()
+
 		if err != nil {
 			panic(err)
 		}
@@ -82,17 +86,17 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, st
 		panic("A Test Apk must be supplied")
 	}
 
-	defer test_apk.Close()
-
 	f := fmt.Sprintf("%s/test.apk", dir)
 	test_apk_file, err := os.Create(f)
-	defer test_apk_file.Close()
 
 	if err != nil {
 		panic(err)
 	}
 
 	_, err = io.Copy(test_apk_file, test_apk)
+	test_apk.Close()
+	test_apk_file.Close()
+
 	if err != nil {
 		panic(err)
 	}
@@ -110,19 +114,22 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, st
 	s.Timestamp = time.Now()
 	s.Project = manifest.Instrument.Target
 
+	if dbErr := db.C("runs").Insert(&s); dbErr != nil {
+		return http.StatusConflict, []byte(dbErr.Error())
+	}
+
 	rats.Uninstall(manifest.Package)
 	rats.Uninstall(manifest.Instrument.Target)
 	os.RemoveAll(dir)
-
-	if dbErr := db.C("runs").Insert(&s); dbErr != nil {
-		return http.StatusConflict, string(dbErr.Error())
-	}
 
 	str, err := json.Marshal(s)
 	if err != nil {
 		panic(err)
 	}
-	return http.StatusOK, string(str)
+
+    //pprof.WriteHeapProfile(file) 
+    //file.Close()
+	return http.StatusOK, str
 }
 
 func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
@@ -196,16 +203,6 @@ func main() {
 	r.Get("/api/runs", GetRuns)
     r.Get("/api/runs/:id", GetRun)
     r.Get("/api/runs/:id/:device", GetRunDevice)
-
-	r.Get("/debug/pprof", pprof.Index)
-	r.Get("/debug/pprof/cmdline", pprof.Cmdline)
-	r.Get("/debug/pprof/profile", pprof.Profile)
-	r.Get("/debug/pprof/symbol", pprof.Symbol)
-	r.Post("/debug/pprof/symbol", pprof.Symbol)
-	r.Get("/debug/pprof/block", pprof.Handler("block").ServeHTTP)
-	r.Get("/debug/pprof/heap", pprof.Handler("heap").ServeHTTP)
-	r.Get("/debug/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
-	r.Get("/debug/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
 
 	m.Action(r.Handle)
 	m.Run()

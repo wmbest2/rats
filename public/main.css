@@ -27,6 +27,7 @@ h4 {
 pre {
     overflow-x: scroll;
     word-wrap: normal;
+    font-family: 'Oxygen Mono';
 }
 
 nav {
