@@ -16,7 +16,7 @@ h4 {
 }
 
 .title {
-    background: #00D256;
+    background: #989B99;
     color:#fff;
     border-top: 2px solid rgba(255,255,255,.2);
     text-shadow: 0 1px 0 rgba(0,0,0,.1);
@@ -30,6 +30,12 @@ h4 {
 
 .progress-bar-danger:hover {
     background-color: #a94442
+}
+
+.list-group .progress {
+    height: 14px;
+    margin-top: 14px;
+    margin-bottom: 14px;
 }
 
 pre {
