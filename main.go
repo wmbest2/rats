@@ -92,8 +92,12 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic(err)
 	}
 
+    devices := <-rats.GetDevices(&rats.DeviceFilter{})
+    fmt.Println(devices)
+    rats.Reserve(devices)
+
 	if install {
-		rats.Install(f)
+		rats.Install(f, devices)
 	}
 
 	f = fmt.Sprintf("%s/test.apk", dir)
@@ -103,12 +107,12 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic("A Test Apk must be supplied")
 	}
 
-	rats.Install(f)
+	rats.Install(f, devices)
 	manifest := rats.GetManifest(f)
 
-	rats.Unlock(<-rats.GetDevices())
+	rats.Unlock(devices)
 
-	s := test.RunTests(manifest)
+	s := test.RunTests(manifest, devices)
 	s.Name = uuid
 	s.Timestamp = time.Now()
 	s.Project = manifest.Instrument.Target
@@ -117,8 +121,10 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		return http.StatusConflict, []byte(dbErr.Error())
 	}
 
-	rats.Uninstall(manifest.Package)
-	rats.Uninstall(manifest.Instrument.Target)
+	rats.Uninstall(manifest.Package, devices)
+	rats.Uninstall(manifest.Instrument.Target, devices)
+    rats.Release(devices)
+
 	os.RemoveAll(dir)
 
 	str, err := json.Marshal(s)
@@ -185,7 +191,7 @@ func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, stri
 }
 
 func GetDevices(parms martini.Params) (int, string) {
-	b, _ := json.Marshal(<-rats.GetDevices())
+	b, _ := json.Marshal(<-rats.GetAllDevices())
 	return http.StatusOK, string(b)
 }
 

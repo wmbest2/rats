@@ -16,13 +16,17 @@ func RunOnDevice(wg *sync.WaitGroup, d adb.AdbRunner, params []string) {
 	d.ExecSync(params...)
 }
 
-func RunOnAll(params ...string) {
+func RunOn(devices []*Device, params ...string) {
 	var wg sync.WaitGroup
-	for _, d := range <-GetDevices() {
+	for _, d := range devices {
 		wg.Add(1)
 		go RunOnDevice(&wg, d, params)
 	}
 	wg.Wait()
+}
+
+func RunOnAll(params ...string) {
+    RunOn(<-GetAllDevices(), params...)
 }
 
 func Unlock(devices []*Device) {
@@ -32,12 +36,12 @@ func Unlock(devices []*Device) {
 	}
 }
 
-func Install(file string) {
-	RunOnAll("install", "-r", file)
+func Install(file string, devices []*Device) {
+	RunOn(devices, "install", "-r", file)
 }
 
-func Uninstall(pack string) {
-	RunOnAll("uninstall", pack)
+func Uninstall(pack string, devices []*Device) {
+	RunOn(devices, "uninstall", pack)
 }
 
 func GetFileFromZip(file string, subFile string) []byte {

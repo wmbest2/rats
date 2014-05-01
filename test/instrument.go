@@ -134,11 +134,10 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 	out <- suite
 }
 
-func RunTests(manifest *apk.Manifest) *TestSuites {
+func RunTests(manifest *apk.Manifest, devices []*rats.Device) *TestSuites {
 	out := make(chan *TestSuite)
     suites := &TestSuites{Success: true}
 
-    devices := <-rats.GetDevices()
 	for _, d := range devices {
 		go RunTest(d, manifest, out)
 	}
