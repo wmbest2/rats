@@ -24,6 +24,11 @@ h4 {
     border-top-right-radius: 2px;
 }
 
+pre {
+    overflow-x: scroll;
+    word-wrap: normal;
+}
+
 nav {
     margin-left: -15px;
     margin-right: -15px;

@@ -6,10 +6,10 @@
         <span>{{ test.name }}</span>
         <span style="float:right">in {{ test.time | number:2 }} seconds</span>
         <pre ng-hide="{{ test.failure === undefined }}" >
-            {{ test.failure }}
+{{ test.failure }}
         </pre>
         <pre ng-hide="{{ test.error === undefined }}" >
-            {{ test.error }}
+{{ test.error }}
         </pre>
     </div>
 </div>
