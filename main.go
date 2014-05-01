@@ -48,8 +48,8 @@ func Mongo(db string) martini.Handler {
 }
 
 func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
-    //file, err := os.Create("memprof") 
-    //if err != nil { log.Fatal(err) } 
+	//file, err := os.Create("memprof")
+	//if err != nil { log.Fatal(err) }
 
 	uuid, err := uuid()
 	if err != nil {
@@ -70,7 +70,7 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		}
 
 		_, err = io.Copy(apk_file, apk)
-        apk.Close()
+		apk.Close()
 		apk_file.Close()
 
 		if err != nil {
@@ -103,10 +103,10 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 	rats.Install(f)
 	manifest := rats.GetManifest(f)
 
-    for _,device := range <-rats.GetDevices() {
-        device.SetScreenOn(true)
-        device.Unlock()
-    }
+	for _, device := range <-rats.GetDevices() {
+		device.SetScreenOn(true)
+		device.Unlock()
+	}
 
 	s := test.RunTests(manifest)
 
@@ -127,29 +127,29 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic(err)
 	}
 
-    //pprof.WriteHeapProfile(file) 
-    //file.Close()
+	//pprof.WriteHeapProfile(file)
+	//file.Close()
 	return http.StatusOK, str
 }
 
 func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
 	var runs test.TestSuites
-    q := bson.M{"name": parms["id"]}
-    fmt.Printf("%#v\n", q)
-    query := db.C("runs").Find(q).Limit(1)
+	q := bson.M{"name": parms["id"]}
+	fmt.Printf("%#v\n", q)
+	query := db.C("runs").Find(q).Limit(1)
 	query.One(&runs)
-    for _, run := range runs.TestSuites {
-        if run.Hostname == parms["device"] {
-            b, _ := json.Marshal(run)
-            return http.StatusOK, string(b)
-        }
-    }
-    return http.StatusNotFound, fmt.Sprintf("Run on Device %s Not Found", parms["device"])
+	for _, run := range runs.TestSuites {
+		if run.Hostname == parms["device"] {
+			b, _ := json.Marshal(run)
+			return http.StatusOK, string(b)
+		}
+	}
+	return http.StatusNotFound, fmt.Sprintf("Run on Device %s Not Found", parms["device"])
 }
 
 func GetRun(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
 	var runs test.TestSuites
-    query := db.C("runs").Find(bson.M{"name": parms["id"]}).Limit(1)
+	query := db.C("runs").Find(bson.M{"name": parms["id"]}).Limit(1)
 	query.One(&runs)
 	b, _ := json.Marshal(runs)
 	return http.StatusOK, string(b)
@@ -201,8 +201,8 @@ func main() {
 	r.Get(`/api/devices`, GetDevices)
 	r.Post("/api/run", RunTests)
 	r.Get("/api/runs", GetRuns)
-    r.Get("/api/runs/:id", GetRun)
-    r.Get("/api/runs/:id/:device", GetRunDevice)
+	r.Get("/api/runs/:id", GetRun)
+	r.Get("/api/runs/:id/:device", GetRunDevice)
 
 	m.Action(r.Handle)
 	m.Run()
