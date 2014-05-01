@@ -55,3 +55,7 @@ ratsApp.controller('RunsController', ['$scope', '$routeParams', 'Runs', function
         return suite.device.manufacturer + " " + suite.device.model
     }
 }]);
+
+ratsApp.controller('ErrorCtrl', ['$scope', function($scope) {
+    $scope.hide_errors = true;
+}]);
