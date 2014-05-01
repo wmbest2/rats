@@ -11,10 +11,12 @@ import (
 	"io"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"time"
 )
@@ -58,7 +60,7 @@ func makeTestFolder() (string, string) {
     return uuid, dir
 }
 
-func saveAndInstall(key string, filename string, r *http.Request) (bool, error) {
+func save(key string, filename string, r *http.Request) (bool, error) {
 	apk, _, _ := r.FormFile(key)
 	if apk != nil {
 		apk_file, err := os.Create(filename)
@@ -75,30 +77,33 @@ func saveAndInstall(key string, filename string, r *http.Request) (bool, error) 
 			return false, err
 		}
 
-		rats.Install(filename)
         return true, nil
 	}
     return false, nil
 }
 
 func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
-	//file, err := os.Create("memprof")
-	//if err != nil { log.Fatal(err) }
     uuid, dir := makeTestFolder()
 
 	f := fmt.Sprintf("%s/main.apk", dir)
-    _, err := saveAndInstall("apk", f, r)
+    install, err := save("apk", f, r)
+
 	if err != nil {
 		panic(err)
 	}
 
+    if install {
+        rats.Install(f)
+    }
+
 	f = fmt.Sprintf("%s/test.apk", dir)
-    _, err = saveAndInstall("test-apk", f, r)
+    _, err = save("test-apk", f, r)
 
 	if err != nil {
 		panic("A Test Apk must be supplied")
 	}
 
+	rats.Install(f)
 	manifest := rats.GetManifest(f)
 
     rats.Unlock(<-rats.GetDevices())
@@ -138,6 +143,12 @@ func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int,
 			return http.StatusOK, string(b)
 		}
 	}
+	file, err := os.Create("memprof")
+	if err != nil { log.Fatal(err) }
+
+    pprof.StartCPUProfile(file)
+    defer pprof.StopCPUProfile()
+
 	return http.StatusNotFound, fmt.Sprintf("Run on Device %s Not Found", parms["device"])
 }
 
@@ -184,6 +195,7 @@ func serveStatic(m *martini.Martini) {
 }
 
 func main() {
+
 	go rats.UpdateAdb(5)
 
 	m := martini.New()
