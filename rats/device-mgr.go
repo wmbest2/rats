@@ -83,7 +83,7 @@ func GetDevices(filter *DeviceFilter) chan []*Device {
 			}
 			lock.Unlock()
 
-			if count == 0 || !(filter != nil && filter.Strict) {
+			if filter == nil || !filter.Strict || count == 0  {
 				break
 			}
 

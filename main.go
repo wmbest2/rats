@@ -85,6 +85,10 @@ func save(key string, filename string, r *http.Request) (bool, error) {
 func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
 	uuid, dir := makeTestFolder()
 
+    count,_ := strconv.Atoi(r.FormValue("count"))
+    
+    filter := &rats.DeviceFilter{Count: count}
+
 	f := fmt.Sprintf("%s/main.apk", dir)
 	install, err := save("apk", f, r)
 
@@ -92,8 +96,7 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic(err)
 	}
 
-    devices := <-rats.GetDevices(&rats.DeviceFilter{})
-    fmt.Println(devices)
+    devices := <-rats.GetDevices(filter)
     rats.Reserve(devices)
 
 	if install {
