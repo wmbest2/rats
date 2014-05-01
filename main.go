@@ -57,7 +57,7 @@ func makeTestFolder() (string, string) {
 
 	dir := fmt.Sprintf("test_runs/%s", uuid)
 	os.MkdirAll(dir, os.ModeDir|os.ModePerm|os.ModeTemporary)
-    return uuid, dir
+	return uuid, dir
 }
 
 func save(key string, filename string, r *http.Request) (bool, error) {
@@ -77,27 +77,27 @@ func save(key string, filename string, r *http.Request) (bool, error) {
 			return false, err
 		}
 
-        return true, nil
+		return true, nil
 	}
-    return false, nil
+	return false, nil
 }
 
 func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
-    uuid, dir := makeTestFolder()
+	uuid, dir := makeTestFolder()
 
 	f := fmt.Sprintf("%s/main.apk", dir)
-    install, err := save("apk", f, r)
+	install, err := save("apk", f, r)
 
 	if err != nil {
 		panic(err)
 	}
 
-    if install {
-        rats.Install(f)
-    }
+	if install {
+		rats.Install(f)
+	}
 
 	f = fmt.Sprintf("%s/test.apk", dir)
-    _, err = save("test-apk", f, r)
+	_, err = save("test-apk", f, r)
 
 	if err != nil {
 		panic("A Test Apk must be supplied")
@@ -106,7 +106,7 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 	rats.Install(f)
 	manifest := rats.GetManifest(f)
 
-    rats.Unlock(<-rats.GetDevices())
+	rats.Unlock(<-rats.GetDevices())
 
 	s := test.RunTests(manifest)
 	s.Name = uuid
@@ -144,10 +144,12 @@ func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int,
 		}
 	}
 	file, err := os.Create("memprof")
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    pprof.StartCPUProfile(file)
-    defer pprof.StopCPUProfile()
+	pprof.StartCPUProfile(file)
+	defer pprof.StopCPUProfile()
 
 	return http.StatusNotFound, fmt.Sprintf("Run on Device %s Not Found", parms["device"])
 }
