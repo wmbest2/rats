@@ -1,4 +1,4 @@
-var ratsApp = angular.module('RatsApp',['ngRoute', 'deviceServices']);
+var ratsApp = angular.module('RatsApp',['ngRoute', 'deviceServices', 'ui.bootstrap']);
 
 ratsApp.config(function($routeProvider, $locationProvider) {
     //$locationProvider.html5Mode(true);

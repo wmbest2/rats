@@ -24,6 +24,14 @@ h4 {
     border-top-right-radius: 2px;
 }
 
+.progress-bar-success:hover {
+    background-color: #3c763d
+}
+
+.progress-bar-danger:hover {
+    background-color: #a94442
+}
+
 pre {
     overflow-x: scroll;
     word-wrap: normal;

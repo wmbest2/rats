@@ -1,12 +1,15 @@
 <h4>
-    {{ run.project }}<span style="float:right">in {{ run.time | number:2 }} seconds</span>
+    {{ run.project }}<span style="float:right"><ng-pluralize 
+        count="run.suites.length" 
+        when="{'1': 'on 1 device', 'other': 'on {} devices'}">
+    </ng-pluralize></span>
 </h4> 
 <div class="list-group">
     <a ng-href="#runs/{{ run.name }}/{{ suite.host }}" style="display:block" class="list-group-item" ng-repeat="suite in run.suites" >
         <span>{{ getSuiteName(suite) }}</span>
         <span style="float:right">in {{ suite.time | number:2 }} seconds</span>
         <div class="progress">
-            <div class="progress-bar"  ng-repeat="test in suite.cases" role="progressbar" ng-class="{'progress-bar-danger': test.failure !== undefined || test.error != undefined, 'progress-bar-success': test.failure === undefined && test.error === undefined}" role="progressbar" aria-valuenow="{{ $index * (100 / suite.cases.length) }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ (100 / suite.cases.length) }}%">
+            <div class="progress-bar" tooltip="{{ test.name }}" ng-repeat="test in suite.cases" role="progressbar" ng-class="{'progress-bar-danger': test.failure !== undefined || test.error != undefined, 'progress-bar-success': test.failure === undefined && test.error === undefined}" role="progressbar" aria-valuenow="{{ $index * (100 / suite.cases.length) }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ (100 / suite.cases.length) }}%">
             <span class="sr-only">80% Complete</span>
           </div>
         </div>
