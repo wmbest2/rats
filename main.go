@@ -11,12 +11,10 @@ import (
 	"io"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
-	"runtime/pprof"
 	"strconv"
 	"time"
 )
@@ -135,8 +133,6 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic(err)
 	}
 
-	//pprof.WriteHeapProfile(file)
-	//file.Close()
 	return http.StatusOK, str
 }
 
@@ -152,13 +148,6 @@ func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int,
 			return http.StatusOK, string(b)
 		}
 	}
-	file, err := os.Create("memprof")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pprof.StartCPUProfile(file)
-	defer pprof.StopCPUProfile()
 
 	return http.StatusNotFound, fmt.Sprintf("Run on Device %s Not Found", parms["device"])
 }
@@ -185,8 +174,8 @@ func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, stri
 	}
 
 	var runs []*test.TestSuites
-	query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
-	//query.Select(bson.M{"name": 1, "project": 1, "timestamp": 1, "time": 1, "success": 1})
+    query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
+    query.Select(bson.M{"name": 1, "project": 1, "timestamp": 1, "time": 1, "success": 1, "testsuites.host": 1})
 	query.Sort("-timestamp")
 	query.All(&runs)
 	b, _ := json.Marshal(runs)
@@ -206,7 +195,6 @@ func serveStatic(m *martini.Martini) {
 }
 
 func main() {
-
 	go rats.UpdateAdb(5)
 
 	m := martini.New()
