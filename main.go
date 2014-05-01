@@ -136,31 +136,25 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 	return http.StatusOK, str
 }
 
-func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
+func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
 	var runs test.TestSuites
-	q := bson.M{"name": parms["id"]}
+    q := bson.M{"name": parms["id"], "testsuites.hostname": parms["device"]}
 	fmt.Printf("%#v\n", q)
 	query := db.C("runs").Find(q).Limit(1)
 	query.One(&runs)
-	for _, run := range runs.TestSuites {
-		if run.Hostname == parms["device"] {
-			b, _ := json.Marshal(run)
-			return http.StatusOK, string(b)
-		}
-	}
-
-	return http.StatusNotFound, fmt.Sprintf("Run on Device %s Not Found", parms["device"])
+    b, _ := json.Marshal(runs.TestSuites[0])
+    return http.StatusOK, b
 }
 
-func GetRun(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
+func GetRun(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
 	var runs test.TestSuites
 	query := db.C("runs").Find(bson.M{"name": parms["id"]}).Limit(1)
 	query.One(&runs)
 	b, _ := json.Marshal(runs)
-	return http.StatusOK, string(b)
+	return http.StatusOK, b
 }
 
-func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, string) {
+func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
 	page := 0
 	p := r.URL.Query().Get("page")
 	if p != "" {
@@ -175,16 +169,16 @@ func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, stri
 
 	var runs []*test.TestSuites
     query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
-    query.Select(bson.M{"name": 1, "project": 1, "timestamp": 1, "time": 1, "success": 1, "testsuites.host": 1})
+    query.Select(bson.M{"testsuites.testcases": 0, "testsuites.device.inuse": 0})
 	query.Sort("-timestamp")
 	query.All(&runs)
 	b, _ := json.Marshal(runs)
-	return http.StatusOK, string(b)
+	return http.StatusOK, b
 }
 
-func GetDevices(parms martini.Params) (int, string) {
+func GetDevices(parms martini.Params) (int, []byte) {
 	b, _ := json.Marshal(<-rats.GetAllDevices())
-	return http.StatusOK, string(b)
+	return http.StatusOK, b
 }
 
 func serveStatic(m *martini.Martini) {
