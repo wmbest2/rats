@@ -13,13 +13,18 @@ So far mostly me, but not without support from [VOKAL Interactive](http://www.vo
 
 ###Installation
 
+Binaries:
 
-Requirements:
-
-`go, adb (at $ANDROID_HOME), bzr, git`
+Go-Pros:
 
 1. `go get github.com/wmbest2/rats_server`
 2. `rats_server`
+
+### Run Your Tests
+
+  `curl -X POST myserver.local:3000/api/run -F apk=@myapk.apk -F test-apk=@myapk-test.apk`
+
+  _Seriously, that's it!_
 
 
 ###Capabilities
@@ -28,9 +33,6 @@ Requirements:
 * Filter Devices for a particular run
  * Strict mode for cases where you must run a particular subset
 * Easy to use Api for extra info
-* Easy to curl test execution
-  * `curl -X POST myserver.local:3000/api/run -F apk=@myapk.apk -F test-apk=@myapk-test.apk`
-  * Seriously thats it
 
 ###Whats Missing / What's to come
 
