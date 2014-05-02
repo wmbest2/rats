@@ -43,6 +43,7 @@ Go-Pros:
 * Screenshots
 * Better Filtering/Scripting
 * Project Grouping
+* Ironically: Tests
 
 ### Let's see more!
 
