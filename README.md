@@ -1,6 +1,4 @@
-RATS
-===========
-Remote Android Test Server
+RATS: Remote Android Test Service
 -----
 
 ![Imgur](http://i.imgur.com/7skL9wq.jpg)
@@ -34,8 +32,9 @@ Requirements:
   * `curl -X POST myserver.local:3000/api/run -F apk=@myapk.apk -F test-apk=@myapk-test.apk`
   * Seriously thats it
 
-###Whats Missing
+###Whats Missing / What's to come
 
+* Proper encoding for Accept headers (e.g. junit for xml)
 * Serious Go know-how (this was a learning opportunity for me)
 * Log capture from tests
 * Screenshots
@@ -47,4 +46,8 @@ Requirements:
 ![Imgur](http://i.imgur.com/MrQX3Gz.jpg)
 
 ![Imgur](http://i.imgur.com/73hH7Qd.jpg)
+
+### Extras
+
+* CLI for running tests against all devices and spitting out the results
 
