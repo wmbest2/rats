@@ -5,7 +5,7 @@ RATS: Remote Android Test Service
 
 What and Why?
 ----
-RATS is a easy to run Test Runner Service that can be hosted anywhere a device can be connected.  It was designed to thwart device hogs and provide a level playing field for shops who can't afford more expensive testing services.
+RATS is an easy to run Test Runner Service that can be hosted anywhere a device can be connected.  It was designed to thwart device hogs and provide a level playing field for shops who can't afford more expensive testing services.
 
 ### Who?
 So far mostly me, but not without support from [VOKAL Interactive](http://www.vokalinteractive.com)
