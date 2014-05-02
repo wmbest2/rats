@@ -32,7 +32,7 @@ Go-Pros:
 * Concurrent Test Running on all devices connected
 * Filter Devices for a particular run
  * Device count filter so you don't piss off your coworkers 
- * Strict mode and Serial Specification for cases where you must run a particular subset of devices
+ * Strict filtering mode and Serial filters for cases where you must run a particular subset of devices
 * Easy to use Api for extra info
 
 ###Whats Missing / What's to come
