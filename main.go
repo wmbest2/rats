@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/go-martini/martini"
 	"github.com/wmbest2/rats_server/rats"
@@ -11,6 +12,7 @@ import (
 	"io"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -191,11 +193,21 @@ func serveStatic(m *martini.Martini) {
 func main() {
 	go rats.UpdateAdb(5)
 
+    var mongodb = flag.String("db", "mongodb://localhost", "Mongo db url")
+    var port = flag.Int("port", 3000, "Port to serve")
+    var debug = flag.Bool("debug", false, "Log debug information")
+
+    flag.Parse()
+
 	m := martini.New()
 	m.Use(martini.Recovery())
-	m.Use(martini.Logger())
-	m.Use(Mongo("localhost/rats"))
+	m.Use(Mongo(fmt.Sprintf("%s/rats", *mongodb)))
 	serveStatic(m)
+
+    if *debug {
+        m.Use(martini.Logger())
+    }
+
 	r := martini.NewRouter()
 	r.Get(`/api/devices`, GetDevices)
 	r.Post("/api/run", RunTests)
@@ -204,5 +216,6 @@ func main() {
 	r.Get("/api/runs/:id/:device", GetRunDevice)
 
 	m.Action(r.Handle)
-	m.Run()
+    fmt.Printf("Listening on port %d\n", *port)
+    log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), m))
 }
