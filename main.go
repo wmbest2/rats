@@ -141,7 +141,6 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
 	var runs test.TestSuites
 	q := bson.M{"name": parms["id"], "testsuites.hostname": parms["device"]}
-	fmt.Printf("%#v\n", q)
 	query := db.C("runs").Find(q).Limit(1)
 	query.One(&runs)
 	b, _ := json.Marshal(runs.TestSuites[0])
@@ -193,7 +192,7 @@ func serveStatic(m *martini.Martini) {
 func main() {
 	go rats.UpdateAdb(5)
 
-    var mongodb = flag.String("db", "mongodb://localhost", "Mongo db url")
+    var mongodb = flag.String("db", "mongodb://localhost/rats", "Mongo db url")
     var port = flag.Int("port", 3000, "Port to serve")
     var debug = flag.Bool("debug", false, "Log debug information")
 
@@ -201,7 +200,7 @@ func main() {
 
 	m := martini.New()
 	m.Use(martini.Recovery())
-	m.Use(Mongo(fmt.Sprintf("%s/rats", *mongodb)))
+	m.Use(Mongo(*mongodb))
 	serveStatic(m)
 
     if *debug {
