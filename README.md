@@ -18,14 +18,13 @@ Binaries:
 Go-Pros:
 
 1. `go get github.com/wmbest2/rats_server`
-2. `rats_server`
+2. `rats_server -port 8080 -db mongodb://somehost`
 
 ### Run Your Tests
 
-  `curl -X POST myserver.local:3000/api/run -F apk=@myapk.apk -F test-apk=@myapk-test.apk`
+  `curl -X POST myserver.local:8080/api/run -F apk=@myapk.apk -F test-apk=@myapk-test.apk`
 
   _Seriously, that's it!_
-
 
 ###Capabilities
 
@@ -37,7 +36,7 @@ Go-Pros:
 
 ###Whats Missing / What's to come
 
-* Proper encoding for Accept headers (e.g. junit for xml)
+* Proper encoding for Accept headers (e.g. xml for proper junit output)
 * Serious Go know-how (this was a learning opportunity for me)
 * Log capture from tests
 * Screenshots
