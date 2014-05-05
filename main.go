@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -100,7 +101,19 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 	}
 
 	count, _ := strconv.Atoi(r.FormValue("count"))
-	filter := &rats.DeviceFilter{Count: count}
+	serialList := r.FormValue("serials")
+    strict := r.FormValue("strict")
+
+    var serials []string
+    if serialList != "" {
+        serials = strings.Split(serialList, ",")
+    }
+
+    filter := &rats.DeviceFilter{
+        Count: count, 
+        Strict: strict == "true",
+    }
+    filter.Serials = serials
 
 	manifest := rats.GetManifest(f)
     filter.MinSdk = manifest.Sdk.Min
