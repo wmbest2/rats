@@ -26,6 +26,14 @@ Go-Pros:
 
   _Seriously, that's it!_
 
+  Parameters:
+
+  * `apk` Main apk
+  * `test-apk` Test package apk
+  * `count` Number of devices
+  * `serials` Comma separated list of device serials
+  * `strict` Strict mode (will run forever if devices dont match)
+
 ###Capabilities
 
 * Concurrent Test Running on all devices connected
