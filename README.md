@@ -1,7 +1,7 @@
 RATS: Remote Android Test Service
 -----
 
-![Imgur](http://i.imgur.com/7skL9wq.jpg)
+![Imgur](http://i.imgur.com/s9Dl1ih.png)
 
 What and Why?
 ----
@@ -47,9 +47,9 @@ Go-Pros:
 
 ### Let's see more!
 
-![Imgur](http://i.imgur.com/MrQX3Gz.jpg)
+![Imgur](http://i.imgur.com/zEnBWu9.png)
 
-![Imgur](http://i.imgur.com/73hH7Qd.jpg)
+![Imgur](http://i.imgur.com/oZsFNNG.png)
 
 ### Extras
 
