@@ -150,7 +150,12 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic(err)
 	}
 
-	return http.StatusOK, str
+    code := http.StatusOK
+    if !s.Success {
+        code = http.StatusInternalServerError
+    }
+
+	return code, str
 }
 
 func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
@@ -202,6 +207,7 @@ func serveStatic(m *martini.Martini) {
 	here := filepath.Dir(file)
 	static := filepath.Join(here, "/public")
 	m.Use(martini.Static(string(static)))
+	m.Use(martini.Static("public"))
 }
 
 func main() {
