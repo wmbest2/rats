@@ -139,9 +139,12 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		return http.StatusConflict, []byte(dbErr.Error())
 	}
 
-	rats.Uninstall(manifest.Package, devices)
-	rats.Uninstall(manifest.Instrument.Target, devices)
-	rats.Release(devices)
+    go func() {
+        rats.Uninstall(manifest.Package, devices)
+        rats.Uninstall(manifest.Instrument.Target, devices)
+
+        rats.Release(devices)
+    }()
 
 	os.RemoveAll(dir)
 
@@ -160,8 +163,9 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 
 func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
 	var runs test.TestSuites
-	q := bson.M{"name": parms["id"], "testsuites.hostname": parms["device"]}
-	query := db.C("runs").Find(q).Limit(1)
+    q := bson.M{"name": parms["id"]}
+    s := bson.M{ "testsuites": bson.M{"$elemMatch": bson.M{"hostname": parms["device"]}}}
+    query := db.C("runs").Find(q).Select(s).Limit(1)
 	query.One(&runs)
 	b, _ := json.Marshal(runs.TestSuites[0])
 	return http.StatusOK, b
