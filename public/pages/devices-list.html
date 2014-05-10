@@ -4,6 +4,7 @@
     <table class="table device-rack">
     <thead>
         <tr>
+            <th></th>
             <th> Manufacturer </th>
             <th> Model </th>
             <th> Version </th>
@@ -12,7 +13,8 @@
         <tr>
     </thead>
     <tbody>
-        <tr ng-repeat="device in devices | filter:query">
+        <tr ng-repeat="device in devices | filter:query | orderBy:predicate">
+            <td> <div ng-class="{'led-yellow blink': device.InUse, 'led-green': !device.InUse}">&nbsp;</div>
             <td>{{ device.manufacturer }}</td>
             <td>{{ device.model }}</td>
             <td>{{ device.version }}</td>

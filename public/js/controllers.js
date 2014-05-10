@@ -36,8 +36,23 @@ ratsApp.controller('MainController', function ($scope) {
     $scope.menu = 'pages/menu.html';
 });
  
-ratsApp.controller('DeviceController', ['$scope', 'Devices', function ($scope, Devices) {
-    $scope.devices = Devices.query();
+ratsApp.controller('DeviceController', ['$scope', '$timeout', 'Devices', function ($scope, $timeout, Devices) {
+    $scope.devices = [];
+    $scope.tick = function() {
+        Devices.query(function(data){
+            $scope.devices = data;
+            $scope.promise = $timeout($scope.tick, 1000);
+        });
+    };
+
+    $scope.tick();
+
+    $scope.predicate = 'manufacturer';
+
+    $scope.$on('$destroy', function(){
+        $timeout.cancel($scope.promise);
+        $scope.promise = undefined;
+    });
 }]);
 
 ratsApp.controller('RunsController', ['$scope', '$routeParams', 'Runs', function ($scope, $routeParams, Runs) {
