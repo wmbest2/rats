@@ -47,7 +47,7 @@ ratsApp.controller('DeviceController', ['$scope', '$timeout', 'Devices', functio
 
     $scope.tick();
 
-    $scope.predicate = 'manufacturer';
+    $scope.predicate = ['manufacturer','model','version'];
 
     $scope.$on('$destroy', function(){
         $timeout.cancel($scope.promise);

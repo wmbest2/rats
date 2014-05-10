@@ -35,11 +35,11 @@ func Unlock(devices []*Device) {
 	}
 }
 
-func Install(file string, devices []*Device) {
+func Install(file string, devices ...*Device) {
 	RunOn(devices, "install", "-r", file)
 }
 
-func Uninstall(pack string, devices []*Device) {
+func Uninstall(pack string, devices ...*Device) {
 	RunOn(devices, "uninstall", pack)
 }
 

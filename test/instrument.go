@@ -27,6 +27,11 @@ type instToken struct {
 	Value     []byte
 }
 
+type RunPair struct {
+    Tests *TestSuite
+    Device *rats.Device
+}
+
 func tokenForLine(line [][]byte) *instToken {
 	token := &instToken{Timestamp: time.Now()}
 	if string(line[1]) == "CODE" {
@@ -72,7 +77,7 @@ func processLastToken(test *TestCase, token *instToken) bool {
 	return true
 }
 
-func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestSuite) {
+func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 	instrumentCheck := regexp.MustCompile("INSTRUMENTATION_STATUS(?:(?:_(CODE): (.*))|(?:: ([^=\n]*)=(.*)))")
 	var currentTest *TestCase
 	var lastToken *instToken
@@ -131,37 +136,55 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}, out chan *TestS
 			fmt.Println(v.(error))
 		}
 	}
-	out <- suite
 }
 
-func RunTests(manifest *apk.Manifest, devices []*rats.Device) *TestSuites {
-	out := make(chan *TestSuite)
-	suites := &TestSuites{Success: true}
+func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *TestSuites) {
+	finished := make(chan *rats.Device)
+	out := make(chan *TestSuites)
+    go func() {
+        in := make(chan *RunPair)
+        count := 0
+        suites := &TestSuites{Success: true}
 
-	for _, d := range devices {
-		go RunTest(d, manifest, out)
-	}
+        for _, d := range devices {
+            go RunTest(d, manifest, in)
+            count++
+        }
 
-	for _ = range devices {
-		suite := <-out
-		suites.TestSuites = append(suites.TestSuites, suite)
-		suites.Time += suite.Time
-		suites.Success = suites.Success && suite.Failures == 0 && suite.Errors == 0
-	}
+TestLoop:
+        for {
+            select {
+            case run := <-in:
+                finished <- run.Device
+                suites.TestSuites = append(suites.TestSuites, run.Tests)
+                suites.Time += run.Tests.Time
+                suites.Success = suites.Success && run.Tests.Failures == 0 && run.Tests.Errors == 0
+                count--
+            }
+            if count == 0 {
+                fmt.Println("EHRHEHRHEHRHRHE")
+                break TestLoop
+            }
+        }
+        out <- suites
+    }()
 
-	return suites
+	return finished, out
 }
 
-func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
+func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
 	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
-	parseInstrumentation(&suite, in, out)
+	parseInstrumentation(&suite, in)
+    out <- &RunPair{Tests: &suite, Device: device}
 }
 
-func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *TestSuite) {
+func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := device.Exec("shell", "am", "instrument", "-r", "-w", testRunner)
 	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
-	parseInstrumentation(&suite, in, out)
+	parseInstrumentation(&suite, in)
+
+    out <- &RunPair{Tests: &suite, Device: device}
 }

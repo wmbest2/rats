@@ -120,17 +120,34 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
     filter.MaxSdk = manifest.Sdk.Max
 
 	devices := <-rats.GetDevices(filter)
-	rats.Reserve(devices)
+	rats.Reserve(devices...)
 
 	if install {
-		rats.Install(main, devices)
+		rats.Install(main, devices...)
 	}
 
-	rats.Install(f, devices)
+	rats.Install(f, devices...)
 
 	rats.Unlock(devices)
 
-	s := test.RunTests(manifest, devices)
+	finished, out := test.RunTests(manifest, devices)
+
+    var s *test.TestSuites
+SuitesLoop:
+    for {
+        select {
+        case s = <- out:
+            break SuitesLoop
+        case device := <- finished:
+            go func() {
+                rats.Uninstall(manifest.Package, device)
+                rats.Uninstall(manifest.Instrument.Target, device)
+
+                rats.Release(device)
+            }()
+        }
+    }
+
 	s.Name = uuid
 	s.Timestamp = time.Now()
 	s.Project = manifest.Instrument.Target
@@ -138,13 +155,6 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 	if dbErr := db.C("runs").Insert(&s); dbErr != nil {
 		return http.StatusConflict, []byte(dbErr.Error())
 	}
-
-    go func() {
-        rats.Uninstall(manifest.Package, devices)
-        rats.Uninstall(manifest.Instrument.Target, devices)
-
-        rats.Release(devices)
-    }()
 
 	os.RemoveAll(dir)
 

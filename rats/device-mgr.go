@@ -95,7 +95,7 @@ func GetDevices(filter *DeviceFilter) chan []*Device {
 	return out
 }
 
-func Reserve(devices []*Device) {
+func Reserve(devices ...*Device) {
 	lock.Lock()
 	for _, value := range devices {
 		value.InUse = true
@@ -103,7 +103,7 @@ func Reserve(devices []*Device) {
 	lock.Unlock()
 }
 
-func Release(devices []*Device) {
+func Release(devices ...*Device) {
 	lock.Lock()
 	for _, value := range devices {
 		value.InUse = false
