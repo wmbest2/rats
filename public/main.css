@@ -85,6 +85,15 @@ nav > ul > li > a > span {
     margin-right:5px;
 }
 
+th > a {
+    text-decoration:none;
+    color:#2b2b2b;
+}
+
+th > a:hover {
+    color:#2b2b2b;
+}
+
 .content {
     padding-top: 20px;
 }
