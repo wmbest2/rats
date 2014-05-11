@@ -8,8 +8,7 @@ What and Why?
 RATS is an easy to run Test Runner Service that can be hosted anywhere a device can be connected.  It was designed to thwart device hogs and provide a level playing field for shops who can't afford more expensive testing services.
 
 ### Who?
-So far mostly me, but not without support from [VOKAL Interactive](http://www.vokalinteractive.com)
-
+So far mostly me[(wmbest2)](http://www.github.com/wmbest2), but not without support from [VOKAL Interactive](http://www.vokalinteractive.com)
 
 ###Installation
 
@@ -38,12 +37,18 @@ Go-Pros:
 
 ###Capabilities
 
-* Concurrent Test Running on all devices connected
+* Concurrent Test Running on all devices requested
+ * Devices are held only as long as the test runs freeing them up sooner for more testing
+ * Active Device monitoring lets you see which devices are in use
 * Filter Devices for a particular run
  * Device count filter so you don't piss off your coworkers 
  * Automatic SDK filtering based on manifest parameters
  * Strict filtering mode and Serial filters for cases where you must run a particular subset of devices
 * Easy to use Api for extra info
+
+###Gradle Plugin
+
+Coming soon. Plugin is working and nearly complete.
 
 ###Whats Missing / What's to come
 
@@ -51,8 +56,8 @@ Go-Pros:
 * Serious Go know-how (this was a learning opportunity for me)
 * Log capture from tests
 * Screenshots
-* Better Filtering/Scripting
 * Project Grouping
+* Realtime test results
 * Ironically: Tests
 
 ### Let's see more!
@@ -60,8 +65,3 @@ Go-Pros:
 ![Imgur](http://i.imgur.com/zEnBWu9.png)
 
 ![Imgur](http://i.imgur.com/oZsFNNG.png)
-
-### Extras
-
-* CLI for running tests against all devices and spitting out the results
-

@@ -12,9 +12,9 @@
             <span style="float:right">in {{ suite.time | number:2 }} seconds</span>
         </div>
         <div class="progress">
-            <div class="progress-bar" tooltip="{{ test.name }}" ng-repeat="test in suite.cases" role="progressbar" ng-class="{'progress-bar-danger': test.failure !== undefined || test.error != undefined, 'progress-bar-success': test.failure === undefined && test.error === undefined}" role="progressbar" aria-valuenow="{{ $index * (100 / suite.cases.length) }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ (100 / suite.cases.length) }}%">
-            <span class="sr-only">80% Complete</span>
-          </div>
+            <div class="progress-bar" tooltip="{{ test.name }}" ng-repeat="test in suite.cases" role="progressbar" ng-class="testSuccess(test)" role="progressbar" aria-valuenow="{{ $index * (100 / suite.tests) }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ (100 / suite.tests) }}%">
+                <span class="sr-only">80% Complete</span>
+            </div>
         </div>
         </div>
     </a>

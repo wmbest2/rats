@@ -151,7 +151,6 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
             count++
         }
 
-TestLoop:
         for {
             select {
             case run := <-in:
@@ -161,9 +160,9 @@ TestLoop:
                 suites.Success = suites.Success && run.Tests.Failures == 0 && run.Tests.Errors == 0
                 count--
             }
+
             if count == 0 {
-                fmt.Println("EHRHEHRHEHRHRHE")
-                break TestLoop
+                break
             }
         }
         out <- suites

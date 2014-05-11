@@ -24,6 +24,11 @@ h4 {
     border-top-right-radius: 2px;
 }
 
+.toggle {
+    margin-left:4px;
+    margin-top:-20px;
+}
+
 .progress-bar-success:hover {
     background-color: #3c763d
 }
@@ -103,6 +108,42 @@ span.label-default {
     color: #ffffff;
 }
 
+.spin {
+    -webkit-animation: spin 1s infinite linear;
+    -moz-animation: spin 1s infinite linear;
+    -o-animation: spin 1s infinite linear;
+    animation: spin 1s infinite linear;
+    -webkit-transform-origin: 50% 45%;
+    transform-origin:49% 45%;
+    -ms-transform-origin:49% 45%; /* IE 9 */
+}
+
+@-moz-keyframes spin {
+  from {
+    -moz-transform: rotate(0deg);
+  }
+  to {
+    -moz-transform: rotate(360deg);
+  }
+}
+
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 @media (min-width: 1200px) { 
     nav {
         padding-top:30px;
