@@ -19,6 +19,7 @@ const (
 	CURRENT
 	STACK
 	CODE
+    LONG_MSG
 )
 
 type instToken struct {
@@ -43,6 +44,8 @@ func tokenForLine(line [][]byte) *instToken {
 			token.Type = NUM_TESTS
 		case "stream":
 			token.Type = STREAM
+		case "longMsg":
+			token.Type = LONG_MSG
 		case "stack":
 			token.Type = STACK
 		case "id":
@@ -69,6 +72,8 @@ func processLastToken(test *TestCase, token *instToken) bool {
 		test.Name = strings.TrimSpace(string(token.Value))
 	case CLASS:
 		test.Classname = strings.TrimSpace(string(token.Value))
+    case LONG_MSG:
+        fallthrough
 	case STACK:
 		test.Stack = string(token.Value) + "\n"
 	default:
@@ -78,7 +83,7 @@ func processLastToken(test *TestCase, token *instToken) bool {
 }
 
 func parseInstrumentation(suite *TestSuite, in chan interface{}) {
-	instrumentCheck := regexp.MustCompile("INSTRUMENTATION_STATUS(?:(?:_(CODE): (.*))|(?:: ([^=\n]*)=(.*)))")
+    instrumentCheck := regexp.MustCompile("INSTRUMENTATION_(?:STATUS|RESULT)(?:(?:_(CODE): (.*))|(?:: ([^=\n]*)=(.*)))")
 	var currentTest *TestCase
 	var lastToken *instToken
 	var startTime, endTime time.Time
@@ -109,13 +114,17 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 				processLastToken(currentTest, lastToken)
 				if lastToken.Type == CODE && string(lastToken.Value) == "1" {
 					startTime = lastToken.Timestamp
-				} else if lastToken.Type == CODE {
+				} else if lastToken.Type == CODE || lastToken.Type == LONG_MSG {
 					endTime = lastToken.Timestamp
-					switch string(lastToken.Value) {
-					case "-2":
+                    v := string(lastToken.Value)
+					switch  {
+                    case lastToken.Type == LONG_MSG:
+                        currentTest.Stack = fmt.Sprintf("Test failed to run to completion. Reason: '%s'. Check device logcat for details", currentTest.Stack)
+                        fallthrough
+					case v == "-2":
 						currentTest.Failure = &currentTest.Stack
 						suite.Failures++
-					case "-1":
+					case v == "-1":
 						currentTest.Error = &currentTest.Stack
 						suite.Errors++
 					}
@@ -126,13 +135,13 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 					currentTest = nil
 					lastToken = nil
 
-                    if suite.Tests == len(suite.TestCases) {
+                    if suite.Tests != 0 && suite.Tests == len(suite.TestCases) {
                         // return early
                         return
                     }
-				}
+				} 
 			} else {
-				if lastToken != nil && lastToken.Type == STACK {
+				if lastToken != nil && (lastToken.Type == STACK || lastToken.Type == LONG_MSG) {
 					currentTest.Stack += string(v.([]byte))
 				}
 			}
