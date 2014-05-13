@@ -93,7 +93,7 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 		panic(err)
 	}
 
-    f := fmt.Sprintf("%s/test.apk", dir)
+	f := fmt.Sprintf("%s/test.apk", dir)
 	_, err = save("test-apk", f, r)
 
 	if err != nil {
@@ -102,22 +102,22 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	serialList := r.FormValue("serials")
-    strict := r.FormValue("strict")
+	strict := r.FormValue("strict")
 
-    var serials []string
-    if serialList != "" {
-        serials = strings.Split(serialList, ",")
-    }
+	var serials []string
+	if serialList != "" {
+		serials = strings.Split(serialList, ",")
+	}
 
-    filter := &rats.DeviceFilter{
-        Count: count, 
-        Strict: strict == "true",
-    }
-    filter.Serials = serials
+	filter := &rats.DeviceFilter{
+		Count:  count,
+		Strict: strict == "true",
+	}
+	filter.Serials = serials
 
 	manifest := rats.GetManifest(f)
-    filter.MinSdk = manifest.Sdk.Min
-    filter.MaxSdk = manifest.Sdk.Max
+	filter.MinSdk = manifest.Sdk.Min
+	filter.MaxSdk = manifest.Sdk.Max
 
 	devices := <-rats.GetDevices(filter)
 	rats.Reserve(devices...)
@@ -132,21 +132,21 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []
 
 	finished, out := test.RunTests(manifest, devices)
 
-    var s *test.TestSuites
+	var s *test.TestSuites
 SuitesLoop:
-    for {
-        select {
-        case s = <- out:
-            break SuitesLoop
-        case device := <- finished:
-            go func() {
-                rats.Uninstall(manifest.Package, device)
-                rats.Uninstall(manifest.Instrument.Target, device)
+	for {
+		select {
+		case s = <-out:
+			break SuitesLoop
+		case device := <-finished:
+			go func() {
+				rats.Uninstall(manifest.Package, device)
+				rats.Uninstall(manifest.Instrument.Target, device)
 
-                rats.Release(device)
-            }()
-        }
-    }
+				rats.Release(device)
+			}()
+		}
+	}
 
 	s.Name = uuid
 	s.Timestamp = time.Now()
@@ -163,19 +163,19 @@ SuitesLoop:
 		panic(err)
 	}
 
-    code := http.StatusOK
-    if !s.Success {
-        code = http.StatusInternalServerError
-    }
+	code := http.StatusOK
+	if !s.Success {
+		code = http.StatusInternalServerError
+	}
 
 	return code, str
 }
 
 func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
 	var runs test.TestSuites
-    q := bson.M{"name": parms["id"]}
-    s := bson.M{ "testsuites": bson.M{"$elemMatch": bson.M{"hostname": parms["device"]}}}
-    query := db.C("runs").Find(q).Select(s).Limit(1)
+	q := bson.M{"name": parms["id"]}
+	s := bson.M{"testsuites": bson.M{"$elemMatch": bson.M{"hostname": parms["device"]}}}
+	query := db.C("runs").Find(q).Select(s).Limit(1)
 	query.One(&runs)
 	b, _ := json.Marshal(runs.TestSuites[0])
 	return http.StatusOK, b
@@ -227,20 +227,20 @@ func serveStatic(m *martini.Martini) {
 func main() {
 	go rats.UpdateAdb(5)
 
-    var mongodb = flag.String("db", "mongodb://localhost/rats", "Mongo db url")
-    var port = flag.Int("port", 3000, "Port to serve")
-    var debug = flag.Bool("debug", false, "Log debug information")
+	var mongodb = flag.String("db", "mongodb://localhost/rats", "Mongo db url")
+	var port = flag.Int("port", 3000, "Port to serve")
+	var debug = flag.Bool("debug", false, "Log debug information")
 
-    flag.Parse()
+	flag.Parse()
 
 	m := martini.New()
 	m.Use(martini.Recovery())
 	m.Use(Mongo(*mongodb))
 	serveStatic(m)
 
-    if *debug {
-        m.Use(martini.Logger())
-    }
+	if *debug {
+		m.Use(martini.Logger())
+	}
 
 	r := martini.NewRouter()
 	r.Get(`/api/devices`, GetDevices)
@@ -250,6 +250,6 @@ func main() {
 	r.Get("/api/runs/:id/:device", GetRunDevice)
 
 	m.Action(r.Handle)
-    fmt.Printf("Listening on port %d\n", *port)
-    log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), m))
+	fmt.Printf("Listening on port %d\n", *port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), m))
 }

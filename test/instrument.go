@@ -19,7 +19,7 @@ const (
 	CURRENT
 	STACK
 	CODE
-    LONG_MSG
+	LONG_MSG
 )
 
 type instToken struct {
@@ -29,8 +29,8 @@ type instToken struct {
 }
 
 type RunPair struct {
-    Tests *TestSuite
-    Device *rats.Device
+	Tests  *TestSuite
+	Device *rats.Device
 }
 
 func tokenForLine(line [][]byte) *instToken {
@@ -72,8 +72,8 @@ func processLastToken(test *TestCase, token *instToken) bool {
 		test.Name = strings.TrimSpace(string(token.Value))
 	case CLASS:
 		test.Classname = strings.TrimSpace(string(token.Value))
-    case LONG_MSG:
-        fallthrough
+	case LONG_MSG:
+		fallthrough
 	case STACK:
 		test.Stack = string(token.Value) + "\n"
 	default:
@@ -83,7 +83,7 @@ func processLastToken(test *TestCase, token *instToken) bool {
 }
 
 func parseInstrumentation(suite *TestSuite, in chan interface{}) {
-    instrumentCheck := regexp.MustCompile("INSTRUMENTATION_(?:STATUS|RESULT)(?:(?:_(CODE): (.*))|(?:: ([^=\n]*)=(.*)))")
+	instrumentCheck := regexp.MustCompile("INSTRUMENTATION_(?:STATUS|RESULT)(?:(?:_(CODE): (.*))|(?:: ([^=\n]*)=(.*)))")
 	var currentTest *TestCase
 	var lastToken *instToken
 	var startTime, endTime time.Time
@@ -116,11 +116,11 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 					startTime = lastToken.Timestamp
 				} else if lastToken.Type == CODE || lastToken.Type == LONG_MSG {
 					endTime = lastToken.Timestamp
-                    v := string(lastToken.Value)
-					switch  {
-                    case lastToken.Type == LONG_MSG:
-                        currentTest.Stack = fmt.Sprintf("Test failed to run to completion. Reason: '%s'. Check device logcat for details", currentTest.Stack)
-                        fallthrough
+					v := string(lastToken.Value)
+					switch {
+					case lastToken.Type == LONG_MSG:
+						currentTest.Stack = fmt.Sprintf("Test failed to run to completion. Reason: '%s'. Check device logcat for details", currentTest.Stack)
+						fallthrough
 					case v == "-2":
 						currentTest.Failure = &currentTest.Stack
 						suite.Failures++
@@ -135,11 +135,11 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 					currentTest = nil
 					lastToken = nil
 
-                    if suite.Tests != 0 && suite.Tests == len(suite.TestCases) {
-                        // return early
-                        return
-                    }
-				} 
+					if suite.Tests != 0 && suite.Tests == len(suite.TestCases) {
+						// return early
+						return
+					}
+				}
 			} else {
 				if lastToken != nil && (lastToken.Type == STACK || lastToken.Type == LONG_MSG) {
 					currentTest.Stack += string(v.([]byte))
@@ -154,32 +154,32 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *TestSuites) {
 	finished := make(chan *rats.Device)
 	out := make(chan *TestSuites)
-    go func() {
-        in := make(chan *RunPair)
-        count := 0
-        suites := &TestSuites{Success: true}
+	go func() {
+		in := make(chan *RunPair)
+		count := 0
+		suites := &TestSuites{Success: true}
 
-        for _, d := range devices {
-            go RunTest(d, manifest, in)
-            count++
-        }
+		for _, d := range devices {
+			go RunTest(d, manifest, in)
+			count++
+		}
 
-        for {
-            select {
-            case run := <-in:
-                finished <- run.Device
-                suites.TestSuites = append(suites.TestSuites, run.Tests)
-                suites.Time += run.Tests.Time
-                suites.Success = suites.Success && run.Tests.Failures == 0 && run.Tests.Errors == 0
-                count--
-            }
+		for {
+			select {
+			case run := <-in:
+				finished <- run.Device
+				suites.TestSuites = append(suites.TestSuites, run.Tests)
+				suites.Time += run.Tests.Time
+				suites.Success = suites.Success && run.Tests.Failures == 0 && run.Tests.Errors == 0
+				count--
+			}
 
-            if count == 0 {
-                break
-            }
-        }
-        out <- suites
-    }()
+			if count == 0 {
+				break
+			}
+		}
+		out <- suites
+	}()
 
 	return finished, out
 }
@@ -189,7 +189,7 @@ func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair
 	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
 	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in)
-    out <- &RunPair{Tests: &suite, Device: device}
+	out <- &RunPair{Tests: &suite, Device: device}
 }
 
 func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
@@ -198,5 +198,5 @@ func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in)
 
-    out <- &RunPair{Tests: &suite, Device: device}
+	out <- &RunPair{Tests: &suite, Device: device}
 }
