@@ -97,7 +97,6 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 
 				if currentTest == nil {
 					currentTest = &TestCase{}
-					suite.Tests++
 				}
 
 				vals := instrumentCheck.FindSubmatch(v.([]byte))
@@ -126,6 +125,11 @@ func parseInstrumentation(suite *TestSuite, in chan interface{}) {
 					suite.TestCases = append(suite.TestCases, currentTest)
 					currentTest = nil
 					lastToken = nil
+
+                    if suite.Tests == len(suite.TestCases) {
+                        // return early
+                        return
+                    }
 				}
 			} else {
 				if lastToken != nil && lastToken.Type == STACK {
