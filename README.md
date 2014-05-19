@@ -48,7 +48,22 @@ Go-Pros:
 
 ###Gradle Plugin
 
-Coming soon. Plugin is working and nearly complete.
+[RATS Gradle Plugin](https://github.com/wmbest2/rats-gradle-plugin)
+
+```groovy
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.10.+'
+        classpath 'com.wmbest.gradle:rats:0.1.+'
+    }
+}
+
+apply plugin: 'android'
+apply plugin: 'rats'
+```
 
 ###Whats Missing / What's to come
 
