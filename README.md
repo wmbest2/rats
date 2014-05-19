@@ -3,12 +3,13 @@ RATS: Remote Android Test Service
 
 ![Imgur](http://i.imgur.com/s9Dl1ih.png)
 
-What and Why?
-----
+###What is RATS?
 RATS is an easy to run Test Runner Service that can be hosted anywhere a device can be connected.  It was designed to thwart device hogs and provide a level playing field for shops who can't afford more expensive testing services.
 
-### Who?
-So far mostly me[(wmbest2)](http://www.github.com/wmbest2), but not without support from [VOKAL Interactive](http://www.vokalinteractive.com)
+It should be as simple to setup as it is to run thanks to the [gradle plugin](https://www.github.com/wmbest2/rats-gradle-plugin)
+
+### Why Rats?
+"RATS!" was what I anticipated our developers at [VOKAL Interactive](http://www.vokalinteractive.com) saying whenever their tests failed.
 
 ###Installation
 
@@ -68,15 +69,18 @@ apply plugin: 'rats'
 ###Whats Missing / What's to come
 
 * Proper encoding for Accept headers (e.g. xml for proper junit output)
-* Serious Go know-how (this was a learning opportunity for me)
 * Log capture from tests
 * Screenshots
 * Project Grouping
 * Realtime test results
 * Ironically: Tests
 
+### Contributors
+So far mostly me[(wmbest2)](http://www.github.com/wmbest2), but not without support from [VOKAL Interactive](http://www.vokalinteractive.com)
+
 ### Let's see more!
 
 ![Imgur](http://i.imgur.com/zEnBWu9.png)
 
 ![Imgur](http://i.imgur.com/oZsFNNG.png)
+
