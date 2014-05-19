@@ -15,7 +15,11 @@ It should be as simple to setup as it is to run thanks to the [gradle plugin](ht
 
 Binaries:
 
-[Temporary Dropbox](https://www.dropbox.com/sh/z0spjt91pqufyh1/sOZ7cJ34-i)
+https://github.com/wmbest2/rats-server/releases/latest
+
+1. Unzip public.zip in the folder of your choice
+2. Download the binary for your architecture and os and place in the same folder
+3. `rats_server -port 8080 -db mongodb://somehost`
 
 Go-Pros:
 
