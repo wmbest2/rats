@@ -2,7 +2,7 @@ package test
 
 import (
 	"encoding/xml"
-	"github.com/wmbest2/rats_server/rats"
+	"github.com/wmbest2/rats-server/rats"
 	"time"
 )
 

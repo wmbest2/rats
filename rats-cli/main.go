@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/wmbest2/rats_server/rats"
-	"github.com/wmbest2/rats_server/test"
+	"github.com/wmbest2/rats-server/rats"
+	"github.com/wmbest2/rats-server/test"
 	"os"
 )
 

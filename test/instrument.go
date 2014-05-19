@@ -3,7 +3,7 @@ package test
 import (
 	"fmt"
 	"github.com/wmbest2/android/apk"
-	"github.com/wmbest2/rats_server/rats"
+	"github.com/wmbest2/rats-server/rats"
 	"regexp"
 	"strconv"
 	"strings"
