@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-martini/martini"
+	"github.com/GeertJohan/go.rice"
 	"github.com/wmbest2/rats-server/rats"
 	"github.com/wmbest2/rats-server/test"
 	"io"
@@ -221,7 +222,6 @@ func serveStatic(m *martini.Martini) {
 	here := filepath.Dir(file)
 	static := filepath.Join(here, "/public")
 	m.Use(martini.Static(string(static)))
-	m.Use(martini.Static("public"))
 }
 
 func main() {
@@ -248,6 +248,7 @@ func main() {
 	r.Get("/api/runs", GetRuns)
 	r.Get("/api/runs/:id", GetRun)
 	r.Get("/api/runs/:id/:device", GetRunDevice)
+	r.Get(".*", http.FileServer(rice.MustFindBox(`public`).HTTPBox()).ServeHTTP)
 
 	m.Action(r.Handle)
 	fmt.Printf("Listening on port %d\n", *port)
