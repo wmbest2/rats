@@ -4,9 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
-	"github.com/go-martini/martini"
+	"github.com/gorilla/mux"
 	"github.com/wmbest2/rats-server/rats"
 	"github.com/wmbest2/rats-server/test"
 	"io"
@@ -15,12 +16,30 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var (
+	mgoSession *mgo.Session
+
+	mongodb = flag.String("db", "mongodb://localhost/rats", "Mongo db url")
+	port    = flag.Int("port", 3000, "Port to serve")
+	debug   = flag.Bool("debug", false, "Log debug information")
+)
+
+type RatsHandler func(http.ResponseWriter, *http.Request, *mgo.Database) error
+
+func (rh RatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s := mgoSession.Clone()
+	defer s.Close()
+
+	err := rh(w, r, s.DB("rats"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
 
 func uuid() (string, error) {
 	uuid := make([]byte, 16)
@@ -35,30 +54,15 @@ func uuid() (string, error) {
 	return hex.EncodeToString(uuid), nil
 }
 
-func Mongo(db string) martini.Handler {
-	session, err := mgo.Dial(db)
-	if err != nil {
-		panic(err)
-	}
-
-	return func(c martini.Context) {
-		reqSession := session.Clone()
-		c.Map(reqSession.DB("rats"))
-		defer reqSession.Close()
-
-		c.Next()
-	}
-}
-
-func makeTestFolder() (string, string) {
+func makeTestFolder() (string, string, error) {
 	uuid, err := uuid()
 	if err != nil {
-		panic(err)
+		return "", "", err
 	}
 
 	dir := fmt.Sprintf("test_runs/%s", uuid)
-	os.MkdirAll(dir, os.ModeDir|os.ModePerm|os.ModeTemporary)
-	return uuid, dir
+	err = os.MkdirAll(dir, os.ModeDir|os.ModePerm|os.ModeTemporary)
+	return uuid, dir, err
 }
 
 func save(key string, filename string, r *http.Request) (bool, error) {
@@ -83,21 +87,23 @@ func save(key string, filename string, r *http.Request) (bool, error) {
 	return false, nil
 }
 
-func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) (int, []byte) {
-	uuid, dir := makeTestFolder()
+func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+	uuid, dir, err := makeTestFolder()
+	if err != nil {
+		return err
+	}
 
 	main := fmt.Sprintf("%s/main.apk", dir)
 	install, err := save("apk", main, r)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	f := fmt.Sprintf("%s/test.apk", dir)
 	_, err = save("test-apk", f, r)
-
 	if err != nil {
-		panic("A Test Apk must be supplied")
+		return errors.New("A Test Apk must be supplied")
 	}
 
 	count, _ := strconv.Atoi(r.FormValue("count"))
@@ -153,43 +159,42 @@ SuitesLoop:
 	s.Project = manifest.Instrument.Target
 
 	if dbErr := db.C("runs").Insert(&s); dbErr != nil {
-		return http.StatusConflict, []byte(dbErr.Error())
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(dbErr.Error())
 	}
 
 	os.RemoveAll(dir)
 
-	str, err := json.Marshal(s)
-	if err != nil {
-		panic(err)
-	}
-
-	code := http.StatusOK
 	if !s.Success {
-		code = http.StatusInternalServerError
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	return code, str
+	return json.NewEncoder(w).Encode(s)
 }
 
-func GetRunDevice(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
+func GetRunDevice(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+	vars := mux.Vars(r)
+
 	var runs test.TestSuites
-	q := bson.M{"name": parms["id"]}
-	s := bson.M{"testsuites": bson.M{"$elemMatch": bson.M{"hostname": parms["device"]}}}
+	q := bson.M{"name": vars["id"]}
+	s := bson.M{"testsuites": bson.M{"$elemMatch": bson.M{"hostname": vars["device"]}}}
 	query := db.C("runs").Find(q).Select(s).Limit(1)
 	query.One(&runs)
-	b, _ := json.Marshal(runs.TestSuites[0])
-	return http.StatusOK, b
+
+	return json.NewEncoder(w).Encode(runs.TestSuites[0])
 }
 
-func GetRun(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
+func GetRun(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+	vars := mux.Vars(r)
+
 	var runs test.TestSuites
-	query := db.C("runs").Find(bson.M{"name": parms["id"]}).Limit(1)
+	query := db.C("runs").Find(bson.M{"name": vars["id"]}).Limit(1)
 	query.One(&runs)
-	b, _ := json.Marshal(runs)
-	return http.StatusOK, b
+
+	return json.NewEncoder(w).Encode(runs)
 }
 
-func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, []byte) {
+func GetRuns(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
 	page := 0
 	p := r.URL.Query().Get("page")
 	if p != "" {
@@ -207,49 +212,40 @@ func GetRuns(r *http.Request, parms martini.Params, db *mgo.Database) (int, []by
 	query.Select(bson.M{"testsuites.testcases": 0, "testsuites.device.inuse": 0})
 	query.Sort("-timestamp")
 	query.All(&runs)
-	b, _ := json.Marshal(runs)
-	return http.StatusOK, b
+
+	return json.NewEncoder(w).Encode(runs)
 }
 
-func GetDevices(parms martini.Params) (int, []byte) {
-	b, _ := json.Marshal(<-rats.GetAllDevices())
-	return http.StatusOK, b
+func GetDevices(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+	return json.NewEncoder(w).Encode(<-rats.GetAllDevices())
 }
 
-func serveStatic(m *martini.Martini) {
-	_, file, _, _ := runtime.Caller(0)
-	here := filepath.Dir(file)
-	static := filepath.Join(here, "/public")
-	m.Use(martini.Static(string(static)))
-	m.Use(martini.Static("public"))
+func init() {
+	flag.Parse()
+
+	var err error
+	mgoSession, err = mgo.Dial(*mongodb)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
 	go rats.UpdateAdb(5)
 
-	var mongodb = flag.String("db", "mongodb://localhost/rats", "Mongo db url")
-	var port = flag.Int("port", 3000, "Port to serve")
-	var debug = flag.Bool("debug", false, "Log debug information")
+	r := mux.NewRouter()
 
-	flag.Parse()
+	r.Handle("/api/devices", RatsHandler(GetDevices))
+	r.Handle("/api/run", RatsHandler(RunTests))
+	r.Handle("/api/runs", RatsHandler(GetRuns))
+	r.Handle("/api/runs/{id}", RatsHandler(GetRun))
+	r.Handle("/api/runs/{id}/{device}", RatsHandler(GetRunDevice))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 
-	m := martini.New()
-	m.Use(martini.Recovery())
-	m.Use(Mongo(*mongodb))
-	serveStatic(m)
+	http.Handle("/", r)
 
-	if *debug {
-		m.Use(martini.Logger())
+	log.Printf("Listening on port %d\n", *port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil); err != nil {
+		log.Fatalf("Error starting server: %s\n", err.Error())
 	}
-
-	r := martini.NewRouter()
-	r.Get(`/api/devices`, GetDevices)
-	r.Post("/api/run", RunTests)
-	r.Get("/api/runs", GetRuns)
-	r.Get("/api/runs/:id", GetRun)
-	r.Get("/api/runs/:id/:device", GetRunDevice)
-
-	m.Action(r.Handle)
-	fmt.Printf("Listening on port %d\n", *port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), m))
 }
