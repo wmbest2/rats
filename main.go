@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-martini/martini"
-	"github.com/GeertJohan/go.rice"
 	"github.com/wmbest2/rats-server/rats"
 	"github.com/wmbest2/rats-server/test"
 	"io"
@@ -217,11 +216,14 @@ func GetDevices(parms martini.Params) (int, []byte) {
 	return http.StatusOK, b
 }
 
-func serveStatic(m *martini.Martini) {
-	_, file, _, _ := runtime.Caller(0)
-	here := filepath.Dir(file)
-	static := filepath.Join(here, "/public")
-	m.Use(martini.Static(string(static)))
+func init() {
+	flag.Parse()
+
+	var err error
+	mgoSession, err = mgo.Dial(*mongodb)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
@@ -248,7 +250,6 @@ func main() {
 	r.Get("/api/runs", GetRuns)
 	r.Get("/api/runs/:id", GetRun)
 	r.Get("/api/runs/:id/:device", GetRunDevice)
-	r.Get(".*", http.FileServer(rice.MustFindBox(`public`).HTTPBox()).ServeHTTP)
 
 	m.Action(r.Handle)
 	fmt.Printf("Listening on port %d\n", *port)
