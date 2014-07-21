@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
 	"github.com/wmbest2/rats-server/rats"
 	"regexp"
@@ -82,71 +83,58 @@ func processLastToken(test *TestCase, token *instToken) bool {
 	return true
 }
 
-func parseInstrumentation(suite *TestSuite, in chan interface{}) {
+func parseInstrumentation(suite *TestSuite, in chan []byte) {
 	instrumentCheck := regexp.MustCompile("INSTRUMENTATION_(?:STATUS|RESULT)(?:(?:_(CODE): (.*))|(?:: ([^=\n]*)=(.*)))")
 	var currentTest *TestCase
 	var lastToken *instToken
 	var startTime, endTime time.Time
-	var v interface{}
+	for v := range in {
+		if instrumentCheck.Match(v) {
 
-	ok := true
+			if currentTest == nil {
+				currentTest = &TestCase{}
+			}
 
-	for {
-		if !ok {
-			break
-		}
+			vals := instrumentCheck.FindSubmatch(v)
+			lastToken = tokenForLine(vals)
 
-		switch v, ok = <-in; v.(type) {
-		case []byte:
-			if instrumentCheck.Match(v.([]byte)) {
+			if suite.Tests == 0 && lastToken.Type == NUM_TESTS {
+				suite.Tests, _ = strconv.Atoi(string(lastToken.Value))
+			}
 
-				if currentTest == nil {
-					currentTest = &TestCase{}
+			processLastToken(currentTest, lastToken)
+			if lastToken.Type == CODE && string(lastToken.Value) == "1" {
+				startTime = lastToken.Timestamp
+			} else if lastToken.Type == CODE || lastToken.Type == LONG_MSG {
+				endTime = lastToken.Timestamp
+				v := string(lastToken.Value)
+				switch {
+				case lastToken.Type == LONG_MSG:
+					currentTest.Stack = fmt.Sprintf("Test failed to run to completion. Reason: '%s'. Check device logcat for details", currentTest.Stack)
+					fallthrough
+				case v == "-2":
+					currentTest.Failure = &currentTest.Stack
+					suite.Failures++
+				case v == "-1":
+					currentTest.Error = &currentTest.Stack
+					suite.Errors++
 				}
 
-				vals := instrumentCheck.FindSubmatch(v.([]byte))
-				lastToken = tokenForLine(vals)
+				currentTest.Time = endTime.Sub(startTime).Seconds()
+				suite.Time += currentTest.Time
+				suite.TestCases = append(suite.TestCases, currentTest)
+				currentTest = nil
+				lastToken = nil
 
-				if suite.Tests == 0 && lastToken.Type == NUM_TESTS {
-					suite.Tests, _ = strconv.Atoi(string(lastToken.Value))
-				}
-
-				processLastToken(currentTest, lastToken)
-				if lastToken.Type == CODE && string(lastToken.Value) == "1" {
-					startTime = lastToken.Timestamp
-				} else if lastToken.Type == CODE || lastToken.Type == LONG_MSG {
-					endTime = lastToken.Timestamp
-					v := string(lastToken.Value)
-					switch {
-					case lastToken.Type == LONG_MSG:
-						currentTest.Stack = fmt.Sprintf("Test failed to run to completion. Reason: '%s'. Check device logcat for details", currentTest.Stack)
-						fallthrough
-					case v == "-2":
-						currentTest.Failure = &currentTest.Stack
-						suite.Failures++
-					case v == "-1":
-						currentTest.Error = &currentTest.Stack
-						suite.Errors++
-					}
-
-					currentTest.Time = endTime.Sub(startTime).Seconds()
-					suite.Time += currentTest.Time
-					suite.TestCases = append(suite.TestCases, currentTest)
-					currentTest = nil
-					lastToken = nil
-
-					if suite.Tests != 0 && suite.Tests == len(suite.TestCases) {
-						// return early
-						return
-					}
-				}
-			} else {
-				if lastToken != nil && (lastToken.Type == STACK || lastToken.Type == LONG_MSG) {
-					currentTest.Stack += string(v.([]byte))
+				if suite.Tests != 0 && suite.Tests == len(suite.TestCases) {
+					// return early
+					return
 				}
 			}
-		case error:
-			fmt.Println(v.(error))
+		} else {
+			if lastToken != nil && (lastToken.Type == STACK || lastToken.Type == LONG_MSG) {
+				currentTest.Stack += string(v)
+			}
 		}
 	}
 }
@@ -186,7 +174,7 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 
 func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
-	in := device.Exec("shell", "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
+	in := adb.Shell(device, "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
 	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in)
 	out <- &RunPair{Tests: &suite, Device: device}
@@ -194,7 +182,7 @@ func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair
 
 func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
-	in := device.Exec("shell", "am", "instrument", "-r", "-w", testRunner)
+	in := adb.Shell(device, "am", "instrument", "-r", "-w", testRunner)
 	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in)
 

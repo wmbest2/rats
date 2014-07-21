@@ -7,7 +7,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/GeertJohan/go.rice"
 	"github.com/gorilla/mux"
+	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/rats-server/rats"
 	"github.com/wmbest2/rats-server/test"
 	"io"
@@ -15,7 +17,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -54,57 +55,45 @@ func uuid() (string, error) {
 	return hex.EncodeToString(uuid), nil
 }
 
-func makeTestFolder() (string, string, error) {
-	uuid, err := uuid()
-	if err != nil {
-		return "", "", err
-	}
-
-	dir := fmt.Sprintf("test_runs/%s", uuid)
-	err = os.MkdirAll(dir, os.ModeDir|os.ModePerm|os.ModeTemporary)
-	return uuid, dir, err
+type byteCounter struct {
+	Total int64
 }
 
-func save(key string, filename string, r *http.Request) (bool, error) {
-	apk, _, _ := r.FormFile(key)
-	if apk != nil {
-		apk_file, err := os.Create(filename)
+func (b *byteCounter) Write(p []byte) (int, error) {
+	b.Total += int64(len(p))
+	return len(p), nil
+}
 
+func getLength(reader io.ReadSeeker) int64 {
+	reader.Seek(0, 0) // reset for new reader
+	var counter byteCounter
+
+	t := io.TeeReader(reader, &counter)
+
+	buf := make([]byte, 4096)
+	for {
+		_, err := t.Read(buf)
 		if err != nil {
-			return false, err
+			break
 		}
-
-		_, err = io.Copy(apk_file, apk)
-		apk.Close()
-		apk_file.Close()
-
-		if err != nil {
-			return false, err
-		}
-
-		return true, nil
 	}
-	return false, nil
+
+	reader.Seek(0, 0) // reset
+	return counter.Total
 }
 
 func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
-	uuid, dir, err := makeTestFolder()
+	uuid, err := uuid()
 	if err != nil {
 		return err
 	}
-
-	main := fmt.Sprintf("%s/main.apk", dir)
-	install, err := save("apk", main, r)
-
-	if err != nil {
-		return err
-	}
-
-	f := fmt.Sprintf("%s/test.apk", dir)
-	_, err = save("test-apk", f, r)
+	main, _, err := r.FormFile("apk")
+	testApk, _, err := r.FormFile("test-apk")
 	if err != nil {
 		return errors.New("A Test Apk must be supplied")
 	}
+
+	size := getLength(testApk)
 
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	serialList := r.FormValue("serials")
@@ -121,18 +110,20 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
 	}
 	filter.Serials = serials
 
-	manifest := rats.GetManifest(f)
+	manifest := rats.GetManifest(testApk, size)
 	filter.MinSdk = manifest.Sdk.Min
 	filter.MaxSdk = manifest.Sdk.Max
+
+	testApk.Seek(0, 0) // reset for new reader
 
 	devices := <-rats.GetDevices(filter)
 	rats.Reserve(devices...)
 
-	if install {
-		rats.Install(main, devices...)
+	if main != nil {
+		rats.Install("main.apk", main, devices...)
 	}
 
-	rats.Install(f, devices...)
+	rats.Install("test.apk", testApk, devices...)
 
 	rats.Unlock(devices)
 
@@ -162,8 +153,6 @@ SuitesLoop:
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(dbErr.Error())
 	}
-
-	os.RemoveAll(dir)
 
 	if !s.Success {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -201,7 +190,7 @@ func GetRuns(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
 		page, _ = strconv.Atoi(p)
 	}
 
-	size := 25
+	size := 10
 	s := r.URL.Query().Get("count")
 	if s != "" {
 		size, _ = strconv.Atoi(s)
@@ -231,7 +220,7 @@ func init() {
 }
 
 func main() {
-	go rats.UpdateAdb(5)
+	go rats.UpdateAdb(adb.Default)
 
 	r := mux.NewRouter()
 

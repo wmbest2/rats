@@ -5,50 +5,66 @@ import (
 	"fmt"
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
+	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"sync"
+	"time"
 )
 
-func RunOnDevice(wg *sync.WaitGroup, d adb.AdbRunner, params []string) {
+func RunOnDevice(wg *sync.WaitGroup, d adb.Transporter, params ...[]string) {
 	defer wg.Done()
-	d.ExecSync(params...)
+	for _, cmd := range params {
+		adb.ShellSync(d, cmd...)
+	}
 }
 
-func RunOn(devices []*Device, params ...string) {
+func RunOn(devices []*Device, params ...[]string) {
 	var wg sync.WaitGroup
 	for _, d := range devices {
 		wg.Add(1)
-		go RunOnDevice(&wg, d, params)
+		go RunOnDevice(&wg, d, params...)
 	}
 	wg.Wait()
 }
 
 func RunOnAll(params ...string) {
-	RunOn(<-GetAllDevices(), params...)
+	RunOn(<-GetAllDevices(), params)
 }
 
 func Unlock(devices []*Device) {
 	for _, device := range devices {
-		device.SetScreenOn(true)
-		device.Unlock()
+		device.Device.SetScreenOn(true)
+		device.Device.Unlock()
 	}
 }
 
-func Install(file string, devices ...*Device) {
-	RunOn(devices, "install", "-r", file)
+func Install(name string, f io.Reader, devices ...*Device) {
+	loc := fmt.Sprintf("/sdcard/tmp/%s", name)
+
+	d := make([]*adb.Device, 0, len(devices))
+	for _, t := range devices {
+		d = append(d, &t.Device)
+	}
+
+	err := adb.PushToDevices(d, f, os.ModeTemporary, uint32(time.Now().Unix()), loc)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	RunOn(devices, []string{"pm", "install", "-r", loc}, []string{"rm", loc})
 }
 
 func Uninstall(pack string, devices ...*Device) {
-	RunOn(devices, "uninstall", pack)
+	RunOn(devices, []string{"pm", "uninstall", pack})
 }
 
-func GetFileFromZip(file string, subFile string) []byte {
-	r, err := zip.OpenReader(file)
+func GetFileFromZip(file io.ReaderAt, size int64, subFile string) []byte {
+	r, err := zip.NewReader(file, size)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer r.Close()
 
 	// Iterate through the files in the archive,
 	// printing some of their contents.
@@ -71,10 +87,10 @@ func GetFileFromZip(file string, subFile string) []byte {
 	return []byte{}
 }
 
-func GetManifest(file string) *apk.Manifest {
+func GetManifest(file io.ReaderAt, size int64) *apk.Manifest {
 	var manifest apk.Manifest
 
-	body := GetFileFromZip(file, "AndroidManifest.xml")
+	body := GetFileFromZip(file, size, "AndroidManifest.xml")
 	err := apk.Unmarshal([]byte(body), &manifest)
 
 	if err != nil {

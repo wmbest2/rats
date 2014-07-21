@@ -20,36 +20,32 @@ type DeviceFilter struct {
 	Strict bool
 }
 
-func Poll(in chan map[string]*Device, out chan map[string]*Device) {
-	devices := <-in
-	new_devices := adb.ListDevices(nil)
-	new_map := make(map[string]*Device)
-	for _, d := range new_devices {
-		if devices[d.String()] != nil {
-			new_map[d.String()] = devices[d.String()]
-		} else {
-			new_map[d.String()] = &Device{Device: *d, InUse: false}
+func UpdateAdb(a *adb.Adb) {
+	for {
+		if a == nil {
+			break
 		}
-	}
-	out <- new_map
-}
+		for d := range a.TrackDevices() {
+			new_devices := a.ParseDevices(nil, d)
 
-func PollDevices() {
-	in := make(chan map[string]*Device)
-	out := make(chan map[string]*Device)
-	go Poll(in, out)
-	lock.Lock()
-	in <- devices
-	devices = <-out
-	lock.Unlock()
-}
+			lock.Lock()
+			old_map := devices
+			lock.Unlock()
 
-func UpdateAdb(seconds time.Duration) {
-	PollDevices()
+			new_map := make(map[string]*Device)
 
-	c := time.Tick(seconds * time.Second)
-	for _ = range c {
-		PollDevices()
+			for _, d := range new_devices {
+				if old_map[d.String()] != nil {
+					new_map[d.String()] = devices[d.String()]
+				} else {
+					new_map[d.String()] = &Device{Device: *d, InUse: false}
+				}
+			}
+
+			lock.Lock()
+			devices = new_map
+			lock.Unlock()
+		}
 	}
 }
 
