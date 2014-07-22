@@ -1,10 +1,15 @@
 <h4>Test Runs</h4>
 <div class="list-group" ng-controller="RunsController">
     <a style="display:block" ng-href="#runs/{{run.name}}" class="list-group-item" ng-repeat="run in runs" ng-class="{'list-group-item-danger': !run.success, 'list-group-item-success': run.success}">
-        <span>{{ run.project }}</span>
-        <span style="float:right"><ng-pluralize 
-            count="run.suites.length" 
-            when="{'1': 'on 1 device', 'other': 'on {} devices'}">
-        </ng-pluralize></span>
+        <div>
+            <span>{{ run.project }}</span>
+            <span style="float:right"><ng-pluralize 
+                count="run.suites.length" 
+                when="{'1': 'on 1 device', 'other': 'on {} devices'}">
+            </ng-pluralize></span>
+        </div>
+        <div>
+            <span style="color:#6EB36F">{{ prettyPrintTime(run.timestamp) }}</span>
+        </div>
     </a>
 </div>

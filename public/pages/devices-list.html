@@ -19,7 +19,7 @@
             <td>{{ device.model }}</td>
             <td>{{ device.version }}</td>
             <td class="hidden-xs">{{ device.sdk }}</td>
-            <td class="hidden-xs"></td>
+            <td class="hidden-xs"><a href="" ng-click="copySerial(device.serial)"><span class='glyphicon glyphicon-barcode'></span></a></td>
         </tr>
         </tbody>
     </table>

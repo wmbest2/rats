@@ -36,7 +36,7 @@ ratsApp.controller('MainController', function ($scope) {
     $scope.menu = 'pages/menu.html';
 });
  
-ratsApp.controller('DeviceController', ['$scope', '$interval', 'Devices', function ($scope, $interval, Devices) {
+ratsApp.controller('DeviceController', ['$scope', '$interval', '$window', 'Devices', function ($scope, $interval, $window, Devices) {
     $scope.devices = [];
 
     $scope.refreshing = true;
@@ -66,6 +66,10 @@ ratsApp.controller('DeviceController', ['$scope', '$interval', 'Devices', functi
         } 
         return "glyphicon-pause blink";
     };
+
+    $scope.copySerial = function(serial) {
+        $window.prompt("Copy to clipboard: Ctrl+C, Enter", "-s " + serial);
+    }
 
     tick();
     $scope.promise = $interval(tick, 1000);
@@ -98,6 +102,10 @@ ratsApp.controller('RunsController', ['$scope', '$routeParams', 'Runs', function
             'progress-bar-danger': test.failure !== undefined || test.error != undefined, 
             'progress-bar-success': test.failure === undefined && test.error === undefined
         };
+    }
+
+    $scope.prettyPrintTime = function(timestamp) {
+        return moment(timestamp).calendar()
     }
 }]);
 
