@@ -15,16 +15,10 @@ It should be as simple to setup as it is to run thanks to the [gradle plugin](ht
 
 Binaries:
 
-https://github.com/wmbest2/rats-server/releases/latest
+1. Download the binary for your architecture and os from [here](https://github.com/wmbest2/rats-server/releases/latest)
+2. Have a mongo database running (see [here](http://docs.mongodb.org/manual/installation/) for more information)
+2. `rats-server_os_arch -port 8080 -db mongodb://somehost`
 
-1. Unzip public.zip in the folder of your choice
-2. Download the binary for your architecture and os and place in the same folder
-3. `rats-server_os_arch -port 8080 -db mongodb://somehost`
-
-Go-Pros:
-
-1. `go get github.com/wmbest2/rats-server`
-2. `rats-server -port 8080 -db mongodb://somehost`
 
 ### Run Your Tests
 
