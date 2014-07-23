@@ -209,6 +209,13 @@ func GetDevices(w http.ResponseWriter, r *http.Request, db *mgo.Database) error 
 	return json.NewEncoder(w).Encode(<-rats.GetAllDevices())
 }
 
+func PingHandler(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "pong")
+
+	return nil
+}
+
 func init() {
 	flag.Parse()
 
@@ -224,6 +231,7 @@ func main() {
 
 	r := mux.NewRouter()
 
+	r.Handle("/api/ping", RatsHandler(PingHandler))
 	r.Handle("/api/devices", RatsHandler(GetDevices))
 	r.Handle("/api/run", RatsHandler(RunTests))
 	r.Handle("/api/runs", RatsHandler(GetRuns))

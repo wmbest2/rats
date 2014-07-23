@@ -9,7 +9,7 @@
             </ng-pluralize></span>
         </div>
         <div>
-            <span style="color:#6EB36F">{{ prettyPrintTime(run.timestamp) }}</span>
+            <span ng-class="{'secondary-danger': !run.success, 'secondary-success': run.success}">{{ prettyPrintTime(run.timestamp) }}</span>
         </div>
     </a>
 </div>

@@ -37,6 +37,14 @@ h4 {
     background-color: #a94442
 }
 
+.secondary-success {
+    color: #6EB36F
+}
+
+.secondary-danger {
+    color: #C98F8E
+}
+
 .list-group .progress {
     height: 14px;
     margin-top: 14px;
