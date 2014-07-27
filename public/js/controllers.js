@@ -13,15 +13,16 @@ ratsApp.config(function($routeProvider, $locationProvider) {
     // route for the devices page
     .when('/runs/:id/:device', {
         templateUrl : 'pages/suite-details.html',
-        controller  : 'RunsController'
+        controller  : 'RunController'
     })
     .when('/runs/:id', {
         templateUrl : 'pages/run-details.html',
-        controller  : 'RunsController'
+        controller  : 'RunController'
     })
     .when('/runs', {
         templateUrl : 'pages/runs-list.html',
-        controller  : 'RunsController'
+        controller  : 'RunsController',
+        reloadOnSearch : false
     })
     .when('/devices', {
         templateUrl : 'pages/devices-list.html',
@@ -79,16 +80,45 @@ ratsApp.controller('DeviceController', ['$scope', '$interval', '$window', 'Devic
     $scope.$on('$destroy', $scope.cancelRefresh);
 }]);
 
-ratsApp.controller('RunsController', ['$scope', '$routeParams', 'Runs', function ($scope, $routeParams, Runs) {
+ratsApp.controller('RunsController', ['$scope', '$routeParams', '$location', 'Runs', function ($scope, $routeParams, $location, Runs) {
     $scope.runs = [];
-    $scope.run = {};
-    if ($routeParams.id === undefined && $routeParams.device === undefined) {
-        Runs.query(function(data) {
-            $scope.runs = data;
-        });
-    } else {
-        $scope.run = Runs.get({id: $routeParams.id, device: $routeParams.device});
+    $scope.maxPages = 5;
+    $scope.currentPage = $routeParams.page;
+    if ($scope.currentPage === undefined) {
+        $scope.currentPage = 1;
     }
+
+    // set minimum total so that paging works correctly
+    $scope.meta = {"total": $scope.currentPage * 10};
+
+    Runs.get({page: $scope.currentPage}, function(data) {
+        $scope.runs = data.runs;
+        $scope.meta = data.meta;
+    });
+
+    $scope.onPageChange = function() {
+        $location.search({page: $scope.currentPage})
+        Runs.get({page: $scope.currentPage}, function(data) {
+            $scope.runs = data.runs;
+            $scope.meta = data.meta;
+        });
+    };
+
+    $scope.testSuccess = function(test) {
+        return {
+            'progress-bar-danger': test.failure !== undefined || test.error != undefined, 
+            'progress-bar-success': test.failure === undefined && test.error === undefined
+        };
+    }
+
+    $scope.prettyPrintTime = function(timestamp) {
+        return moment(timestamp).calendar();
+    }
+}]);
+
+ratsApp.controller('RunController', ['$scope', '$routeParams', 'Runs', function ($scope, $routeParams, Runs) {
+    $scope.run = {};
+    $scope.run = Runs.get({id: $routeParams.id, device: $routeParams.device});
 
     $scope.getSuiteName = function(suite) {
         if (suite.device === undefined) {
@@ -102,10 +132,6 @@ ratsApp.controller('RunsController', ['$scope', '$routeParams', 'Runs', function
             'progress-bar-danger': test.failure !== undefined || test.error != undefined, 
             'progress-bar-success': test.failure === undefined && test.error === undefined
         };
-    }
-
-    $scope.prettyPrintTime = function(timestamp) {
-        return moment(timestamp).calendar()
     }
 }]);
 

@@ -35,5 +35,6 @@ type TestSuites struct {
 	Project    string       `json:"project"`
 	Timestamp  time.Time    `json:"timestamp"`
 	Time       float64      `xml:"time,attr" json:"time"`
+	Message    string       `json:"description"`
 	Success    bool         `json:"success"`
 }

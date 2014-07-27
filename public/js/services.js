@@ -9,7 +9,6 @@ phoneServices.factory('Devices', ['$resource',
 phoneServices.factory('Runs', ['$resource',
     function($resource){
         return $resource('api/runs/:id/:device', {}, {
-            query: {method:'GET', isArray:true},
             get: {method:'GET'}
         });
     }]);

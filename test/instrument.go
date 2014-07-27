@@ -133,7 +133,7 @@ func parseInstrumentation(suite *TestSuite, in chan []byte) {
 			}
 		} else {
 			if lastToken != nil && (lastToken.Type == STACK || lastToken.Type == LONG_MSG) {
-				currentTest.Stack += string(v)
+				currentTest.Stack += fmt.Sprintf("%s\n", v)
 			}
 		}
 	}

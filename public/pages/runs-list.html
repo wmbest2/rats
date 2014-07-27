@@ -1,5 +1,5 @@
 <h4>Test Runs</h4>
-<div class="list-group" ng-controller="RunsController">
+<div class="list-group">
     <a style="display:block" ng-href="#runs/{{run.name}}" class="list-group-item" ng-repeat="run in runs" ng-class="{'list-group-item-danger': !run.success, 'list-group-item-success': run.success}">
         <div>
             <span>{{ run.project }}</span>
@@ -12,4 +12,7 @@
             <span ng-class="{'secondary-danger': !run.success, 'secondary-success': run.success}">{{ prettyPrintTime(run.timestamp) }}</span>
         </div>
     </a>
+</div>
+<div class="col-lg-12">
+    <pagination boundary-links="true" max-size="maxPages" total-items="meta.total" ng-model="currentPage" previous-text="&lsaquo;" next-text="&rsaquo;" first-text="&laquo;" last-text="&raquo;" ng-change="onPageChange()"></pagination>
 </div>

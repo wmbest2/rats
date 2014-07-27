@@ -14,7 +14,6 @@ import (
 	"github.com/wmbest2/rats-server/test"
 	"io"
 	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
 	"strconv"
@@ -31,6 +30,12 @@ var (
 )
 
 type RatsHandler func(http.ResponseWriter, *http.Request, *mgo.Database) error
+
+type PageMeta struct {
+	Page  int `json:"page"`
+	Count int `json:"count"`
+	Total int `json:"total"`
+}
 
 func (rh RatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s := mgoSession.Clone()
@@ -98,6 +103,7 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
 	count, _ := strconv.Atoi(r.FormValue("count"))
 	serialList := r.FormValue("serials")
 	strict := r.FormValue("strict")
+	msg := r.FormValue("message")
 
 	var serials []string
 	if serialList != "" {
@@ -119,10 +125,14 @@ func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
 	devices := <-rats.GetDevices(filter)
 	rats.Reserve(devices...)
 
+	// Remove old if left over
+	rats.Uninstall(manifest.Package, devices...)
+	rats.Uninstall(manifest.Instrument.Target, devices...)
+
+	// Install New
 	if main != nil {
 		rats.Install("main.apk", main, devices...)
 	}
-
 	rats.Install("test.apk", testApk, devices...)
 
 	rats.Unlock(devices)
@@ -139,7 +149,6 @@ SuitesLoop:
 			go func() {
 				rats.Uninstall(manifest.Package, device)
 				rats.Uninstall(manifest.Instrument.Target, device)
-
 				rats.Release(device)
 			}()
 		}
@@ -148,6 +157,9 @@ SuitesLoop:
 	s.Name = uuid
 	s.Timestamp = time.Now()
 	s.Project = manifest.Instrument.Target
+	if msg != "" {
+		s.Message = msg
+	}
 
 	if dbErr := db.C("runs").Insert(&s); dbErr != nil {
 		w.WriteHeader(http.StatusConflict)
@@ -159,50 +171,6 @@ SuitesLoop:
 	}
 
 	return json.NewEncoder(w).Encode(s)
-}
-
-func GetRunDevice(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
-	vars := mux.Vars(r)
-
-	var runs test.TestSuites
-	q := bson.M{"name": vars["id"]}
-	s := bson.M{"testsuites": bson.M{"$elemMatch": bson.M{"hostname": vars["device"]}}}
-	query := db.C("runs").Find(q).Select(s).Limit(1)
-	query.One(&runs)
-
-	return json.NewEncoder(w).Encode(runs.TestSuites[0])
-}
-
-func GetRun(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
-	vars := mux.Vars(r)
-
-	var runs test.TestSuites
-	query := db.C("runs").Find(bson.M{"name": vars["id"]}).Limit(1)
-	query.One(&runs)
-
-	return json.NewEncoder(w).Encode(runs)
-}
-
-func GetRuns(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
-	page := 0
-	p := r.URL.Query().Get("page")
-	if p != "" {
-		page, _ = strconv.Atoi(p)
-	}
-
-	size := 10
-	s := r.URL.Query().Get("count")
-	if s != "" {
-		size, _ = strconv.Atoi(s)
-	}
-
-	var runs []*test.TestSuites
-	query := db.C("runs").Find(bson.M{}).Limit(size).Skip(page * size)
-	query.Select(bson.M{"testsuites.testcases": 0, "testsuites.device.inuse": 0})
-	query.Sort("-timestamp")
-	query.All(&runs)
-
-	return json.NewEncoder(w).Encode(runs)
 }
 
 func GetDevices(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
