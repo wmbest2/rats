@@ -96,12 +96,37 @@ ratsApp.controller('RunsController', ['$scope', '$routeParams', '$location', 'Ru
         $scope.meta = data.meta;
     });
 
-    $scope.onPageChange = function() {
-        $location.search({page: $scope.currentPage})
+
+    $scope.$on('$routeUpdate', function() {        
+        var page = $location.search().page;
+        if (page) {
+            $scope.currentPage = page;      
+        } else {
+            $scope.currentPage = 1;      
+        }
+        $scope.refresh();
+    });
+
+    $scope.firstLine = function(run) {
+        if (run.description != "") {
+            return run.description.split('\n')[0];
+        }
+        return "\u00A0";
+    }
+
+    $scope.secondary = function(run) {
+        return run.success ? 'secondary-success' : 'secondary-danger';
+    }
+
+    $scope.refresh = function() {
         Runs.get({page: $scope.currentPage}, function(data) {
             $scope.runs = data.runs;
             $scope.meta = data.meta;
         });
+    }
+
+    $scope.onPageChange = function() {
+        $location.search({page: $scope.currentPage});
     };
 
     $scope.testSuccess = function(test) {
@@ -118,6 +143,25 @@ ratsApp.controller('RunsController', ['$scope', '$routeParams', '$location', 'Ru
 
 ratsApp.controller('RunController', ['$scope', '$routeParams', 'Runs', function ($scope, $routeParams, Runs) {
     $scope.run = {};
+    $scope.hide_description = true;
+    $scope.hasDescription = function() {
+        return $scope.run !== undefined && $scope.run.description != "";
+    }
+
+    $scope.firstLine = function(run) {
+        if (run.description != "") {
+            return run.description.split('\n')[0];
+        }
+        return "\u00A0";
+    }
+
+    $scope.getHeader = function() {
+        if ($scope.hide_description) {
+            return $scope.firstLine($scope.run);
+        } 
+        return "Description:";
+    }
+
     $scope.run = Runs.get({id: $routeParams.id, device: $routeParams.device});
 
     $scope.getSuiteName = function(suite) {

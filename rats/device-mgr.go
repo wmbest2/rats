@@ -1,6 +1,7 @@
 package rats
 
 import (
+	"errors"
 	"github.com/wmbest2/android/adb"
 	"sync"
 	"time"
@@ -20,12 +21,14 @@ type DeviceFilter struct {
 	Strict bool
 }
 
-func UpdateAdb(a *adb.Adb) {
+func UpdateAdb(a *adb.Adb) error {
 	for {
+		var connected bool
 		if a == nil {
 			break
 		}
 		for d := range a.TrackDevices() {
+			connected = true
 			new_devices := a.ParseDevices(nil, d)
 
 			lock.Lock()
@@ -46,7 +49,12 @@ func UpdateAdb(a *adb.Adb) {
 			devices = new_map
 			lock.Unlock()
 		}
+
+		if !connected {
+			panic(errors.New("Couldn't connect to adb"))
+		}
 	}
+	return nil
 }
 
 func GetAllDevices() chan []*Device {

@@ -16,6 +16,9 @@ import (
 	"labix.org/v2/mgo"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -194,8 +197,40 @@ func init() {
 	}
 }
 
+func tryStartAdb() {
+	path := os.ExpandEnv("$ANDROID_HOME")
+	if path != "" {
+		path = filepath.Join(path, "platform-tools", "adb")
+		b, err := exec.Command(path, "start-server").CombinedOutput()
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(string(b))
+		}
+	}
+}
+
+func refreshDevices(a *adb.Adb, inRecover bool) {
+	defer func() {
+		if e := recover(); e != nil {
+			if !inRecover && a == adb.Default {
+				fmt.Println("Couldn't connect to adb, attempting to recover")
+				tryStartAdb()
+				refreshDevices(a, true)
+			} else if inRecover {
+				fmt.Println("Still couldn't connect.  Make sure adb exists in $ANDROID_HOME\n\tor manually start it with 'adb start-server'")
+				os.Exit(2)
+			} else {
+				fmt.Println(e)
+				os.Exit(2)
+			}
+		}
+	}()
+	rats.UpdateAdb(a)
+}
+
 func main() {
-	go rats.UpdateAdb(adb.Default)
+	go refreshDevices(adb.Default, false)
 
 	r := mux.NewRouter()
 

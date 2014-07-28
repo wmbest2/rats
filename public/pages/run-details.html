@@ -5,17 +5,23 @@
     </ng-pluralize></span>
 </h4> 
 <div class="list-group">
+<a href="" class="list-group-item" ng-click="hide_description=!hide_description" ng-show="hasDescription()">
+    <span>{{ getHeader() }}</span>
+    <pre ng-hide="hide_description" >{{ run.description }}</pre>
+</a>
+</div>
+<div class="list-group">
     <a ng-href="#runs/{{ run.name }}/{{ suite.host }}" style="display:block" class="list-group-item" ng-repeat="suite in run.suites" >
         <div>
-        <div>
-            <span>{{ getSuiteName(suite) }}</span>
-            <span style="float:right">in {{ suite.time | number:2 }} seconds</span>
-        </div>
-        <div class="progress">
-            <div class="progress-bar" tooltip="{{ test.name }}" ng-repeat="test in suite.cases" role="progressbar" ng-class="testSuccess(test)" role="progressbar" aria-valuenow="{{ $index * (100 / suite.tests) }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ (100 / suite.tests) }}%">
-                <span class="sr-only">80% Complete</span>
+            <div>
+                <span>{{ getSuiteName(suite) }}</span>
+                <span style="float:right">in {{ suite.time | number:2 }} seconds</span>
             </div>
-        </div>
+            <div class="progress">
+                <div class="progress-bar" tooltip="{{ test.name }}" ng-repeat="test in suite.cases" role="progressbar" ng-class="testSuccess(test)" role="progressbar" aria-valuenow="{{ $index * (100 / suite.tests) }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ (100 / suite.tests) }}%">
+                    <span class="sr-only">80% Complete</span>
+                </div>
+            </div>
         </div>
     </a>
 </div>
