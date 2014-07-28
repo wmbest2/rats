@@ -30,6 +30,9 @@ var (
 	mongodb = flag.String("db", "mongodb://localhost/rats", "Mongo db url")
 	port    = flag.Int("port", 3000, "Port to serve")
 	debug   = flag.Bool("debug", false, "Log debug information")
+
+	adb_address = flag.String("adb_address", "localhost", "Address of ADB server")
+	adb_port    = flag.Int("adb_port", 5037, "Port of ADB server")
 )
 
 type RatsHandler func(http.ResponseWriter, *http.Request, *mgo.Database) error
@@ -230,7 +233,11 @@ func refreshDevices(a *adb.Adb, inRecover bool) {
 }
 
 func main() {
-	go refreshDevices(adb.Default, false)
+	conn := adb.Default
+	if *adb_address != "localhost" || *adb_port != 5037 {
+		conn = adb.Connect(*adb_address, *adb_port)
+	}
+	go refreshDevices(conn, false)
 
 	r := mux.NewRouter()
 
