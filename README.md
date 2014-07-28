@@ -20,6 +20,12 @@ Binaries:
 2. `rats-server_os_arch -port 8080 -db mongodb://somehost`
 
 
+####But my FreeBSD machine cant run ADB!
+
+Run rats with the `adb_address` and `adb_port` flags to point it to another machine!
+Run all your server in the cloud and your devices on your desk!
+
+
 ### Run Your Tests
 
   `curl -X POST myserver.local:8080/api/run -F apk=@myapk.apk -F test-apk=@myapk-test.apk`
@@ -33,6 +39,7 @@ Binaries:
   * `count` Number of devices
   * `serials` Comma separated list of device serials
   * `strict` Strict mode (will run forever if devices dont match)
+  * `message` A description of the run
 
 ###Capabilities
 
@@ -56,7 +63,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.10.+'
-        classpath 'com.wmbest.gradle:rats:0.1.+'
+        classpath 'com.wmbest.gradle:rats:0.2.+'
     }
 }
 
