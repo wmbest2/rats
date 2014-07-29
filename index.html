@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Remote Android Test Service by wmbest2</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/wmbest2/rats-server">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/wmbest2/rats-server/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/wmbest2/rats-server/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Remote Android Test Service</h1>
+          <p></p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/wmbest2">wmbest2</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h2>
+<a name="rats-remote-android-test-service" class="anchor" href="#rats-remote-android-test-service"><span class="octicon octicon-link"></span></a>RATS: Remote Android Test Service</h2>
+
+<p><img src="http://i.imgur.com/s9Dl1ih.png" alt="Imgur"></p>
+
+<h3>
+<a name="what-is-rats" class="anchor" href="#what-is-rats"><span class="octicon octicon-link"></span></a>What is RATS?</h3>
+
+<p>RATS is an easy to run Test Runner Service that can be hosted anywhere a device can be connected.  It was designed to thwart device hogs and provide a level playing field for shops who can't afford more expensive testing services.</p>
+
+<p>It should be as simple to setup as it is to run thanks to the <a href="https://www.github.com/wmbest2/rats-gradle-plugin">gradle plugin</a></p>
+
+<h3>
+<a name="why-rats" class="anchor" href="#why-rats"><span class="octicon octicon-link"></span></a>Why Rats?</h3>
+
+<p>"RATS!" was what I anticipated our developers at <a href="http://www.vokalinteractive.com">VOKAL Interactive</a> saying whenever their tests failed.</p>
+
+<h3>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
+
+<p>Binaries:</p>
+
+<ol>
+<li>Download the binary for your architecture and os from <a href="https://github.com/wmbest2/rats-server/releases/latest">here</a>
+</li>
+<li>Have a mongo database running (see <a href="http://docs.mongodb.org/manual/installation/">here</a> for more information)</li>
+<li><code>rats-server_os_arch -port 8080 -db mongodb://somehost</code></li>
+</ol><h4>
+<a name="but-my-freebsd-machine-cant-run-adb" class="anchor" href="#but-my-freebsd-machine-cant-run-adb"><span class="octicon octicon-link"></span></a>But my FreeBSD machine cant run ADB!</h4>
+
+<p>Run rats with the <code>adb_address</code> and <code>adb_port</code> flags to point it to another machine!
+Run your server in the cloud and your devices on your desk!</p>
+
+<h3>
+<a name="run-your-tests" class="anchor" href="#run-your-tests"><span class="octicon octicon-link"></span></a>Run Your Tests</h3>
+
+<p><code>curl -X POST myserver.local:8080/api/run -F apk=@myapk.apk -F test-apk=@myapk-test.apk</code></p>
+
+<p><em>Seriously, that's it!</em></p>
+
+<p>Parameters:</p>
+
+<ul>
+<li>
+<code>apk</code> Main apk</li>
+<li>
+<code>test-apk</code> Test package apk</li>
+<li>
+<code>count</code> Number of devices</li>
+<li>
+<code>serials</code> Comma separated list of device serials</li>
+<li>
+<code>strict</code> Strict mode (will run forever if devices dont match)</li>
+<li>
+<code>message</code> A description of the run</li>
+</ul><h3>
+<a name="capabilities" class="anchor" href="#capabilities"><span class="octicon octicon-link"></span></a>Capabilities</h3>
+
+<ul>
+<li>Concurrent Test Running on all devices requested
+
+<ul>
+<li>Devices are held only as long as the test runs freeing them up sooner for more testing</li>
+<li>Active Device monitoring lets you see which devices are in use</li>
+</ul>
+</li>
+<li>Filter Devices for a particular run
+
+<ul>
+<li>Device count filter so you don't piss off your coworkers </li>
+<li>Automatic SDK filtering based on manifest parameters</li>
+<li>Strict filtering mode and Serial filters for cases where you must run a particular subset of devices</li>
+</ul>
+</li>
+<li>Easy to use Api for extra info</li>
+</ul><h3>
+<a name="gradle-plugin" class="anchor" href="#gradle-plugin"><span class="octicon octicon-link"></span></a>Gradle Plugin</h3>
+
+<p><a href="https://github.com/wmbest2/rats-gradle-plugin">RATS Gradle Plugin</a></p>
+
+<div class="highlight highlight-groovy"><pre><span class="n">buildscript</span> <span class="o">{</span>
+    <span class="n">repositories</span> <span class="o">{</span>
+        <span class="n">mavenCentral</span><span class="o">()</span>
+    <span class="o">}</span>
+    <span class="n">dependencies</span> <span class="o">{</span>
+        <span class="n">classpath</span> <span class="s1">'com.android.tools.build:gradle:0.10.+'</span>
+        <span class="n">classpath</span> <span class="s1">'com.wmbest.gradle:rats:0.2.+'</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="n">apply</span> <span class="nl">plugin:</span> <span class="s1">'android'</span>
+<span class="n">apply</span> <span class="nl">plugin:</span> <span class="s1">'rats'</span>
+</pre></div>
+
+<h3>
+<a name="whats-missing--whats-to-come" class="anchor" href="#whats-missing--whats-to-come"><span class="octicon octicon-link"></span></a>Whats Missing / What's to come</h3>
+
+<ul>
+<li>Proper encoding for Accept headers (e.g. xml for proper junit output)</li>
+<li>Log capture from tests</li>
+<li>Screenshots</li>
+<li>Project Grouping</li>
+<li>Realtime test results</li>
+<li>Ironically: Tests</li>
+</ul><h3>
+<a name="contributors" class="anchor" href="#contributors"><span class="octicon octicon-link"></span></a>Contributors</h3>
+
+<p>So far mostly me<a href="http://www.github.com/wmbest2">(wmbest2)</a>, but not without support from <a href="http://www.vokalinteractive.com">VOKAL Interactive</a></p>
+
+<h3>
+<a name="lets-see-more" class="anchor" href="#lets-see-more"><span class="octicon octicon-link"></span></a>Let's see more!</h3>
+
+<p><img src="http://i.imgur.com/zEnBWu9.png" alt="Imgur"></p>
+
+<p><img src="http://i.imgur.com/oZsFNNG.png" alt="Imgur"></p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
