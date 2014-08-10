@@ -149,7 +149,7 @@ ratsApp.controller('RunController', ['$scope', '$routeParams', 'Runs', function 
     }
 
     $scope.firstLine = function(run) {
-        if (run.description != "") {
+        if (run.description !== undefined) {
             return run.description.split('\n')[0];
         }
         return "\u00A0";
