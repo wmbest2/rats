@@ -34,10 +34,20 @@ func RunOnAll(params ...string) {
 }
 
 func Unlock(devices []*Device) {
+	var wg sync.WaitGroup
 	for _, device := range devices {
-		device.Device.SetScreenOn(true)
-		device.Device.Unlock()
+		wg.Add(1)
+		go func(d *Device) {
+			d.Device.SetScreenOn(false)
+			<-time.After(1 * time.Second)
+			d.Device.SetScreenOn(true)
+			<-time.After(1 * time.Second)
+			d.Device.Unlock()
+			<-time.After(1 * time.Second)
+			wg.Done()
+		}(device)
 	}
+	wg.Wait()
 }
 
 func Install(name string, f io.Reader, devices ...*Device) {

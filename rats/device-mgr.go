@@ -2,6 +2,7 @@ package rats
 
 import (
 	"errors"
+	"fmt"
 	"github.com/wmbest2/android/adb"
 	"sync"
 	"time"
@@ -52,7 +53,11 @@ func UpdateAdb(a *adb.Adb) error {
 
 		if !connected {
 			panic(errors.New("Couldn't connect to adb"))
+		} else {
+			fmt.Println("Lost adb connection?!")
 		}
+
+		<-time.After(2 * time.Second)
 	}
 	return nil
 }

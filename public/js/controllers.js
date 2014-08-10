@@ -179,6 +179,13 @@ ratsApp.controller('RunController', ['$scope', '$routeParams', 'Runs', function 
     }
 }]);
 
-ratsApp.controller('ErrorCtrl', ['$scope', function($scope) {
+ratsApp.controller('ErrorCtrl', ['$scope', '$window', function($scope, $window) {
     $scope.hide_errors = true;
+
+    $scope.toggleHide = function() {
+        console.log($window.getSelection());
+        if (typeof $window.getSelection() == "undefined" || $window.getSelection().type != "Range") {
+            $scope.hide_errors=!$scope.hide_errors;
+        }
+    }
 }]);

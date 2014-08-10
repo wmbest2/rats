@@ -5,10 +5,10 @@
     </ng-pluralize></span>
 </h4> 
 <div class="list-group">
-<a href="" class="list-group-item" ng-click="hide_description=!hide_description" ng-show="hasDescription()">
+<div class="list-group-item" ng-click="hide_description=!hide_description" ng-show="hasDescription()">
     <span>{{ getHeader() }}</span>
     <pre ng-hide="hide_description" >{{ run.description }}</pre>
-</a>
+</div>
 </div>
 <div class="list-group">
     <a ng-href="#runs/{{ run.name }}/{{ suite.host }}" style="display:block" class="list-group-item" ng-repeat="suite in run.suites" >

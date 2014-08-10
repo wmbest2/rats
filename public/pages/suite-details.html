@@ -6,10 +6,10 @@
     </div>
 </h4> 
 <div class="list-group" ng-controller="ErrorCtrl" >
-    <a href="" class="list-group-item" ng-click="hide_errors=!hide_errors" ng-repeat="test in run.cases" ng-class="{'list-group-item-danger': test.failure !== undefined || test.error != undefined, 'list-group-item-success': test.failure === undefined && test.error === undefined}">
+    <div class="list-group-item" ng-click="toggleHide()" ng-repeat="test in run.cases" ng-class="{'list-group-item-danger': test.failure !== undefined || test.error != undefined, 'list-group-item-success': test.failure === undefined && test.error === undefined}">
         <span>{{ test.name }}</span>
         <span style="float:right" class="hidden-xs" >in {{ test.time | number:2 }} seconds</span>
         <pre ng-hide="hide_errors || test.failure === undefined" >{{ test.failure }}</pre>
         <pre ng-hide="hide_errors || test.error === undefined" >{{ test.error }}</pre>
-    </a>
+    </div>
 </div>
