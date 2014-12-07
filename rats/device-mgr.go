@@ -16,6 +16,11 @@ type Device struct {
 	InUse bool
 }
 
+type DeviceGroup struct {
+	Name string
+	adb.DeviceFilter
+}
+
 type DeviceFilter struct {
 	adb.DeviceFilter
 	Count  int
