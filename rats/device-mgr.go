@@ -9,7 +9,7 @@ import (
 )
 
 var devices map[string]*Device
-var lock sync.Mutex
+var lock sync.RWMutex
 
 type Device struct {
 	adb.Device
@@ -37,9 +37,9 @@ func UpdateAdb(a *adb.Adb) error {
 			connected = true
 			new_devices := a.ParseDevices(nil, d)
 
-			lock.Lock()
+			lock.RLock()
 			old_map := devices
-			lock.Unlock()
+			lock.RUnlock()
 
 			new_map := make(map[string]*Device)
 
@@ -75,16 +75,16 @@ func GetDevices(filter *DeviceFilter) chan []*Device {
 	out := make(chan []*Device)
 
 	go func() {
-		lock.Lock()
+		lock.RLock()
 		v := make([]*Device, 0, len(devices))
-		lock.Unlock()
+		lock.RUnlock()
 
 		count := -1
 		if filter != nil && filter.Count > 0 {
 			count = filter.Count
 		}
 		for {
-			lock.Lock()
+			lock.RLock()
 			for _, value := range devices {
 				if filter == nil || (value.MatchFilter(&filter.DeviceFilter)) && !value.InUse {
 					v = append(v, value)
@@ -95,7 +95,7 @@ func GetDevices(filter *DeviceFilter) chan []*Device {
 					}
 				}
 			}
-			lock.Unlock()
+			lock.RUnlock()
 
 			if filter == nil || !filter.Strict || count == 0 {
 				break
