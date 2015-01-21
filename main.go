@@ -10,7 +10,6 @@ import (
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/rats-server/rats"
 	"github.com/wmbest2/rats-server/test"
-	"labix.org/v2/mgo"
 	"log"
 	"net/http"
 	"os"
@@ -22,17 +21,21 @@ import (
 )
 
 var (
-	mgoSession *mgo.Session
-
-	mongodb = flag.String("db", "mongodb://localhost/rats", "Mongo db url")
-	port    = flag.Int("port", 3000, "Port to serve")
-	debug   = flag.Bool("debug", false, "Log debug information")
+	port  = flag.Int("port", 3000, "Port to serve")
+	debug = flag.Bool("debug", false, "Log debug information")
 
 	adb_address = flag.String("adb_address", "localhost", "Address of ADB server")
 	adb_port    = flag.Int("adb_port", 5037, "Port of ADB server")
 )
 
-type RatsHandler func(http.ResponseWriter, *http.Request, *mgo.Database) error
+type RatsHandler func(http.ResponseWriter, *http.Request) error
+
+func (rh RatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := rh(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
 
 type PageMeta struct {
 	Page  int `json:"page"`
@@ -40,17 +43,7 @@ type PageMeta struct {
 	Total int `json:"total"`
 }
 
-func (rh RatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s := mgoSession.Clone()
-	defer s.Close()
-
-	err := rh(w, r, s.DB("rats"))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func RunTests(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+func RunTests(w http.ResponseWriter, r *http.Request) error {
 	uuid, err := uuid()
 	if err != nil {
 		return err
@@ -124,10 +117,10 @@ SuitesLoop:
 		s.Message = msg
 	}
 
-	if dbErr := db.C("runs").Insert(&s); dbErr != nil {
-		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(dbErr.Error())
-	}
+	//if dbErr := db.C("runs").Insert(&s); dbErr != nil {
+	//w.WriteHeader(http.StatusConflict)
+	//json.NewEncoder(w).Encode(dbErr.Error())
+	//}
 
 	if !s.Success {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -136,11 +129,11 @@ SuitesLoop:
 	return json.NewEncoder(w).Encode(s)
 }
 
-func GetDevices(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+func GetDevices(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(<-rats.GetAllDevices())
 }
 
-func PingHandler(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
+func PingHandler(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "pong")
 
@@ -149,12 +142,6 @@ func PingHandler(w http.ResponseWriter, r *http.Request, db *mgo.Database) error
 
 func init() {
 	flag.Parse()
-
-	var err error
-	mgoSession, err = mgo.Dial(*mongodb)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func tryStartAdb() {
@@ -200,10 +187,10 @@ func main() {
 
 	r.Handle("/api/ping", RatsHandler(PingHandler))
 	r.Handle("/api/devices", RatsHandler(GetDevices))
-	r.Handle("/api/run", RatsHandler(RunTests))
-	r.Handle("/api/runs", RatsHandler(GetRuns))
-	r.Handle("/api/runs/{id}", RatsHandler(GetRun))
-	r.Handle("/api/runs/{id}/{device}", RatsHandler(GetRunDevice))
+	//r.Handle("/api/run", RatsHandler(RunTests))
+	//r.Handle("/api/runs", RatsHandler(GetRuns))
+	//r.Handle("/api/runs/{id}", RatsHandler(GetRun))
+	//r.Handle("/api/runs/{id}/{device}", RatsHandler(GetRunDevice))
 	r.PathPrefix("/").Handler(http.FileServer(rice.MustFindBox(`public`).HTTPBox()))
 
 	http.Handle("/", r)
