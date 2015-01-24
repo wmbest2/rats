@@ -1,4 +1,4 @@
-package user
+package project
 
 import (
 	"github.com/wmbest2/rats/db"
@@ -7,23 +7,21 @@ import (
 
 const (
 	createTable = `
-	CREATE TABLE users (
+	CREATE TABLE projects (
 		id         SERIAL PRIMARY KEY,
-		username   VARCHAR,
-		password   VARCHAR
+		name       VARCHAR,
 		created_on TIMESTAMP NOT NULL DEFAULT NOW(),
-		CONSTRAINT uni_username UNIQUE (username)
+		CONSTRAINT uni_name UNIQUE (name)
 	)
 	`
 
 	createTokenTable = `
-	CREATE TABLE user_tokens (
+	CREATE TABLE project_tokens (
 		token                 VARCHAR PRIMARY KEY,
 		token_encrypted       VARCHAR,
-		user_id               SERIAL NOT NULL,
+		project_id            SERIAL UNIQUE NOT NULL,
 		created_on            TIMESTAMP NOT NULL DEFAULT NOW(),
-		persistent BOOLEAN DEFAULT FALSE,
-		FOREIGN KEY (user_id) REFERENCES users(id)
+		FOREIGN KEY (project_id) REFERENCES project(id)
 	)
 	`
 )
