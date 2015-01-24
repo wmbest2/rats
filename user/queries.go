@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/wmbest2rats/db"
+	"github.com/wmbest2/rats/db"
 	"log"
 )
 
