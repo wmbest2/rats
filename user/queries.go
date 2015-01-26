@@ -9,10 +9,9 @@ const (
 	createTable = `
 	CREATE TABLE users (
 		id         SERIAL PRIMARY KEY,
-		username   VARCHAR,
-		password   VARCHAR
+		username   VARCHAR UNIQUE,
+		password   VARCHAR,
 		created_on TIMESTAMP NOT NULL DEFAULT NOW(),
-		CONSTRAINT uni_username UNIQUE (username)
 	)
 	`
 

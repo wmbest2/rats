@@ -5,8 +5,9 @@ type Metadata map[string]string
 type Device interface {
 	Metadata() *Metadata
 
-	Reserve() bool
-	Release() bool
+	Reserve()
+	Release()
+	InUse() bool
 
 	Push(filename string, f io.Reader)
 	Pull(filename string, f io.Writer)
@@ -14,5 +15,5 @@ type Device interface {
 	Install(filename string, f io.Reader)
 	Uninstall(filename string)
 
-	RunTest(app io.Reader, test io.Reader) *test.TestRunner
+	RunTest(app io.Reader, test io.Reader)
 }
