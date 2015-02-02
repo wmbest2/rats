@@ -46,7 +46,6 @@ const (
 )
 
 func init() {
-	log.Println("HELLO WORLD")
 	_, err := db.Conn.Exec(createTable)
 	if err != nil {
 		log.Println(err)

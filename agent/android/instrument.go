@@ -1,10 +1,11 @@
-package test
+package android
 
 import (
 	"fmt"
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
-	"github.com/wmbest2/rats-server/rats"
+	"github.com/wmbest2/rats/rats"
+	"github.com/wmbest2/rats/test"
 	"regexp"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ type instToken struct {
 }
 
 type RunPair struct {
-	Tests  *TestSuite
+	Tests  *test.TestSuite
 	Device *rats.Device
 }
 
@@ -64,7 +65,7 @@ func tokenForLine(line [][]byte) *instToken {
 	return token
 }
 
-func processLastToken(test *TestCase, token *instToken) bool {
+func processLastToken(test *test.TestCase, token *instToken) bool {
 	if token == nil {
 		return false
 	}
@@ -83,16 +84,16 @@ func processLastToken(test *TestCase, token *instToken) bool {
 	return true
 }
 
-func parseInstrumentation(suite *TestSuite, in chan []byte) {
+func parseInstrumentation(suite *test.TestSuite, in chan []byte) {
 	instrumentCheck := regexp.MustCompile("INSTRUMENTATION_(?:STATUS|RESULT)(?:(?:_(CODE): (.*))|(?:: ([^=\n]*)=(.*)))")
-	var currentTest *TestCase
+	var currentTest *test.TestCase
 	var lastToken *instToken
 	var startTime, endTime time.Time
 	for v := range in {
 		if instrumentCheck.Match(v) {
 
 			if currentTest == nil {
-				currentTest = &TestCase{}
+				currentTest = &test.TestCase{}
 			}
 
 			vals := instrumentCheck.FindSubmatch(v)
@@ -113,16 +114,16 @@ func parseInstrumentation(suite *TestSuite, in chan []byte) {
 					currentTest.Stack = fmt.Sprintf("Test failed to run to completion. Reason: '%s'. Check device logcat for details", currentTest.Stack)
 					fallthrough
 				case v == "-2":
-					currentTest.Failure = &currentTest.Stack
+					currentTest.Failures = append(currentTest.Failures, currentTest.Stack)
 					suite.Failures++
 				case v == "-1":
-					currentTest.Error = &currentTest.Stack
+					currentTest.Errors = append(currentTest.Errors, currentTest.Stack)
 					suite.Errors++
 				}
 
 				currentTest.Time = endTime.Sub(startTime).Seconds()
 				suite.Time += currentTest.Time
-				suite.TestCases = append(suite.TestCases, currentTest)
+				suite.TestCases = append(suite.TestCases, *currentTest)
 				currentTest = nil
 				lastToken = nil
 
@@ -139,13 +140,13 @@ func parseInstrumentation(suite *TestSuite, in chan []byte) {
 	}
 }
 
-func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *TestSuites) {
+func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *test.TestSuites) {
 	finished := make(chan *rats.Device)
-	out := make(chan *TestSuites)
+	out := make(chan *test.TestSuites)
 	go func() {
 		in := make(chan *RunPair)
 		count := 0
-		suites := &TestSuites{Success: true}
+		suites := &test.TestSuites{Success: true}
 
 		for _, d := range devices {
 			go RunTest(d, manifest, in)
@@ -156,7 +157,7 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 			select {
 			case run := <-in:
 				finished <- run.Device
-				suites.TestSuites = append(suites.TestSuites, run.Tests)
+				suites.TestSuites = append(suites.TestSuites, *run.Tests)
 				suites.Time += run.Tests.Time
 				suites.Success = suites.Success && run.Tests.Failures == 0 && run.Tests.Errors == 0
 				count--
@@ -175,7 +176,7 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := adb.Shell(device, "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
-	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
+	suite := test.TestSuite{Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in)
 	out <- &RunPair{Tests: &suite, Device: device}
 }
@@ -183,7 +184,7 @@ func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair
 func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := adb.Shell(device, "am", "instrument", "-r", "-w", testRunner)
-	suite := TestSuite{Device: device, Hostname: device.Serial, Name: device.String()}
+	suite := test.TestSuite{Hostname: device.Serial, Name: device.String()}
 	parseInstrumentation(&suite, in)
 
 	out <- &RunPair{Tests: &suite, Device: device}

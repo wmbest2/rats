@@ -1,5 +1,9 @@
 package device
 
+import (
+	"io"
+)
+
 type Metadata map[string]string
 
 type Device interface {
