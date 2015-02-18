@@ -7,17 +7,12 @@ import (
 type Metadata map[string]string
 
 type Device interface {
+	Serial() string
 	Metadata() *Metadata
 
 	Reserve()
 	Release()
 	InUse() bool
 
-	Push(filename string, f io.Reader)
-	Pull(filename string, f io.Writer)
-
-	Install(filename string, f io.Reader)
-	Uninstall(filename string)
-
-	RunTest(app io.Reader, test io.Reader)
+	RunTest(app io.Reader, test io.Reader) (chan TestSuite, chan bool)
 }
