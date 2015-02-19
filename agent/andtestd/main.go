@@ -175,20 +175,39 @@ func main() {
 			log.Fatalf("Receive error: %s\n", err)
 		}
 
-		result := run(msg.Run)
+		go func() {
+			switch msg.Command {
+			case proto.Init:
+				result := run(msg.Run)
 
-		b, err := json.Marshal(result)
-		if err != nil {
-			log.Fatal(err)
-		}
+				b, err := json.Marshal(result)
+				if err != nil {
+					log.Fatal(err)
+				}
 
-		err = msg.Responder.Send(proto.Message{
-			Command:   proto.Complete,
-			Result:    b,
-			Responder: sender,
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
+				err = msg.Responder.Send(proto.Message{
+					Command:   proto.Complete,
+					Result:    b,
+					Responder: sender,
+				})
+				if err != nil {
+					log.Fatal(err)
+				}
+			case proto.Devices:
+				b, err := json.Marshal(<-rats.GetAllDevices())
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = msg.Responder.Send(proto.Message{
+					Command:   proto.Complete,
+					Result:    b,
+					Responder: sender,
+				})
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}()
 	}
 }

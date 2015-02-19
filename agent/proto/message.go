@@ -6,6 +6,7 @@ const (
 	Register = "rats:proto:register"
 	Init     = "rats:proto:init"
 	Complete = "rats:proto:complete"
+	Devices  = "rats:proto:devices"
 )
 
 type Run struct {
@@ -16,7 +17,7 @@ type Run struct {
 type Message struct {
 	Command   string
 	Run       *Run
-	Result    []byte
+	Result    interface{}
 	Responder libchan.Sender
 }
 

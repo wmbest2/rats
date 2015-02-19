@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,7 +12,6 @@ import (
 	"github.com/docker/libchan"
 	"github.com/gorilla/mux"
 	"github.com/wmbest2/rats/agent/proto"
-	"github.com/wmbest2/rats/rats"
 )
 
 var (
@@ -27,6 +25,7 @@ type RatsHandler func(http.ResponseWriter, *http.Request) error
 func (rh RatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := rh(w, r)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -84,21 +83,48 @@ func RunTests(w http.ResponseWriter, r *http.Request) error {
 
 	err = daemon.Send(msg)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		return err
 	}
 
 	msg = &proto.Message{}
 	err = receiver.Receive(msg)
 	if err != nil {
-		log.Printf("Receive error: %s\n", err)
+		return err
 	}
 
-	fmt.Fprint(w, string(msg.Result))
+	if v, ok := msg.Result.([]byte); ok {
+		fmt.Fprint(w, string(v))
+		return nil
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
 	return nil
 }
 
 func GetDevices(w http.ResponseWriter, r *http.Request) error {
-	return json.NewEncoder(w).Encode(<-rats.GetAllDevices())
+	receiver, remoteSender := libchan.Pipe()
+
+	err := daemon.Send(proto.Message{
+		Command:   proto.Devices,
+		Responder: remoteSender,
+	})
+	if err != nil {
+		return err
+	}
+
+	msg := &proto.Message{}
+	err = receiver.Receive(msg)
+	if err != nil {
+		return err
+	}
+
+	if v, ok := msg.Result.([]byte); ok {
+		fmt.Fprint(w, string(v))
+		return nil
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
+	return nil
 }
 
 func PingHandler(w http.ResponseWriter, r *http.Request) error {
