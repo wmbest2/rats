@@ -8,8 +8,9 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"github.com/gorilla/mux"
 	"github.com/wmbest2/android/adb"
-	"github.com/wmbest2/rats-server/rats"
-	"github.com/wmbest2/rats-server/test"
+	"github.com/wmbest2/rats/agent/android"
+	"github.com/wmbest2/rats/rats"
+	"github.com/wmbest2/rats/test"
 	"log"
 	"net/http"
 	"os"
@@ -93,7 +94,7 @@ func RunTests(w http.ResponseWriter, r *http.Request) error {
 
 	rats.Unlock(devices)
 
-	finished, out := test.RunTests(manifest, devices)
+	finished, out := android.RunTests(manifest, devices)
 
 	var s *test.TestSuites
 SuitesLoop:
@@ -112,7 +113,6 @@ SuitesLoop:
 
 	s.Name = uuid
 	s.Timestamp = time.Now()
-	s.Project = manifest.Instrument.Target
 	if msg != "" {
 		s.Message = msg
 	}
