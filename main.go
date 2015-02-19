@@ -187,7 +187,7 @@ func main() {
 
 	r.Handle("/api/ping", RatsHandler(PingHandler))
 	r.Handle("/api/devices", RatsHandler(GetDevices))
-	//r.Handle("/api/run", RatsHandler(RunTests))
+	r.Handle("/api/run", RatsHandler(RunTests))
 	//r.Handle("/api/runs", RatsHandler(GetRuns))
 	//r.Handle("/api/runs/{id}", RatsHandler(GetRun))
 	//r.Handle("/api/runs/{id}/{device}", RatsHandler(GetRunDevice))
