@@ -3,7 +3,7 @@ package runs
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/wmbest2/rats-server/test"
+	"github.com/wmbest2/rats/test"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"

@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/wmbest2/rats-server/rats"
-	"github.com/wmbest2/rats-server/test"
+	"github.com/wmbest2/rats/agent/android"
+	"github.com/wmbest2/rats/rats"
 	"os"
 )
 
@@ -32,7 +32,7 @@ func main() {
 	testFile := os.Args[len(os.Args)-1]
 	manifest := rats.GetManifest(testFile)
 
-	s := test.RunTests(manifest, devices)
+	s := android.RunTests(manifest, devices)
 	str, err := xml.Marshal(s)
 	if err == nil {
 		fmt.Println(string(str))
