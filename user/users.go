@@ -16,7 +16,7 @@ var (
 )
 
 type User struct {
-	Id        string    `json:"-"`
+	Id        int64     `json:"-"`
 	Username  string    `json:"username"`
 	Password  *string   `json:"-"`
 	IsAdmin   bool      `json:"is_admin"`
@@ -61,6 +61,6 @@ func (u *User) Type() api.TokenType {
 	return api.UserToken
 }
 
-func (u *User) Identifier() string {
+func (u *User) Identifier() int64 {
 	return u.Id
 }

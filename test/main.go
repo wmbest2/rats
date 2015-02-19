@@ -44,10 +44,24 @@ type TestSuites struct {
 	TestSuites []TestSuite `xml:"testsuite" json:"suites,omitempty"`
 	Name       string      `xml:"name,attr" json:"name"`
 	Time       float64     `xml:"time,attr" json:"time"`
+	Success    bool        `xml:"-" json:"success"`
+}
 
-	// Rats specifics? Should this be a separate TestRun object?
+type Artifact struct {
+	Id    int64  `xml:"-" json:"id"`
+	RunId int64  `xml:"-" json:"run_id"`
+	Name  string `xml:"-" json:"name"`
+	Data  []byte `xml:"-" json:"data"`
+}
+
+type TestRun struct {
+	TestSuites
+
+	Id        int64     `xml:"-" json:"id"`
+	Token     string    `xml:"-" json:"token"`
 	Project   int64     `xml:"-" json:"project"`
 	Timestamp time.Time `xml:"-" json:"timestamp"`
+	CommitId  string    `xml:"-" json:"commit"`
 	Message   string    `xml:"-" json:"description"`
-	Success   bool      `xml:"-" json:"success"`
+	Artifacts []string  `xml:"-" json:"artifacts"`
 }

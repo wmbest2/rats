@@ -16,17 +16,18 @@ const (
 )
 
 type Token struct {
+	Id             int64     `json:"id"`
 	Token          string    `json:"-"`
 	TokenEncrypted string    `json:"token"`
 	Type           string    `json:"type"`
-	Id             string    `json:"-"`
+	ParentId       int64     `json:"parent_id"`
 	CreatedOn      time.Time `json:"created_on,omitempty"`
 }
 
 type TokenHolder interface {
 	Seed() string
 	Type() TokenType
-	Identifier() string
+	Identifier() int64
 }
 
 var (
@@ -53,10 +54,11 @@ func GenerateToken(holder TokenHolder) (string, error) {
 
 func FetchToken(holder TokenHolder) (string, error) {
 	var token Token
-	err := db.Conn.QueryRow(findToken, holder.Identifier()).Scan(&token.Token,
+	err := db.Conn.QueryRow(findToken, holder.Identifier()).Scan(&token.Id,
+		&token.Token,
 		&token.TokenEncrypted,
 		&token.Type,
-		&token.Id,
+		&token.ParentId,
 		&token.CreatedOn)
 
 	if err != nil {

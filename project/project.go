@@ -7,7 +7,7 @@ import (
 )
 
 type Project struct {
-	Id        string    `json:"-"`
+	Id        int64     `json:"-"`
 	Name      string    `json:"name"`
 	CreatedOn time.Time `json:"created_on,omitempty"`
 }
@@ -44,6 +44,6 @@ func (p *Project) Type() api.TokenType {
 	return api.ProjectToken
 }
 
-func (p *Project) Identifier() string {
+func (p *Project) Identifier() int64 {
 	return p.Id
 }

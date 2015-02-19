@@ -4,6 +4,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/wmbest2/rats/api"
 	"github.com/wmbest2/rats/db"
+	"log"
 	"testing"
 )
 
@@ -80,8 +81,10 @@ func TestProjectCanOnlyHaveOneKey(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(project, ShouldNotBeNil)
 
+			log.Printf("project id: %d\n", project.Id)
+
 			token, err := api.FetchToken(project)
-			So(token, ShouldNotBeNil)
+			So(token, ShouldNotEqual, "")
 			So(err, ShouldBeNil)
 
 			token_value, err := api.GenerateToken(project)
