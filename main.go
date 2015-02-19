@@ -1,32 +1,25 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/GeertJohan/go.rice"
-	"github.com/gorilla/mux"
-	"github.com/wmbest2/android/adb"
-	"github.com/wmbest2/rats/agent/android"
-	"github.com/wmbest2/rats/rats"
-	"github.com/wmbest2/rats/test"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
+
+	"github.com/GeertJohan/go.rice"
+	"github.com/docker/libchan"
+	"github.com/gorilla/mux"
+	"github.com/wmbest2/rats/agent/proto"
+	"github.com/wmbest2/rats/rats"
 )
 
 var (
-	port  = flag.Int("port", 3000, "Port to serve")
-	debug = flag.Bool("debug", false, "Log debug information")
-
-	adb_address = flag.String("adb_address", "localhost", "Address of ADB server")
-	adb_port    = flag.Int("adb_port", 5037, "Port of ADB server")
+	port    = flag.Int("port", 3000, "Port to serve HTTP connections")
+	rpcport = flag.Int("rpcport", 4000, "Port to serve RPC connections")
+	debug   = flag.Bool("debug", false, "Log debug information")
 )
 
 type RatsHandler func(http.ResponseWriter, *http.Request) error
@@ -45,88 +38,63 @@ type PageMeta struct {
 }
 
 func RunTests(w http.ResponseWriter, r *http.Request) error {
+	receiver, remoteSender := libchan.Pipe()
+	msg := proto.NewRun(remoteSender)
+
 	uuid, err := uuid()
 	if err != nil {
 		return err
 	}
+
+	msg.Run.Metadata["uuid"] = uuid
+
 	main, _, err := r.FormFile("apk")
 	testApk, _, err := r.FormFile("test-apk")
 	if err != nil {
 		return errors.New("A Test Apk must be supplied")
 	}
 
-	size := getLength(testApk)
+	// TODO: this can just copy r.FormValues -> map[string][]string
+	mainBuf := &bytes.Buffer{}
+	testBuf := &bytes.Buffer{}
 
-	count, _ := strconv.Atoi(r.FormValue("count"))
-	serialList := r.FormValue("serials")
-	strict := r.FormValue("strict")
-	msg := r.FormValue("message")
-
-	var serials []string
-	if serialList != "" {
-		serials = strings.Split(serialList, ",")
+	_, err = mainBuf.ReadFrom(main)
+	if err != nil {
+		return err
 	}
 
-	filter := &rats.DeviceFilter{
-		Count:  count,
-		Strict: strict == "true",
-	}
-	filter.Serials = serials
-
-	manifest := rats.GetManifest(testApk, size)
-	filter.MinSdk = manifest.Sdk.Min
-	filter.MaxSdk = manifest.Sdk.Max
-
-	testApk.Seek(0, 0) // reset for new reader
-
-	devices := <-rats.GetDevices(filter)
-	rats.Reserve(devices...)
-
-	// Remove old if left over
-	rats.Uninstall(manifest.Package, devices...)
-	rats.Uninstall(manifest.Instrument.Target, devices...)
-
-	// Install New
-	if main != nil {
-		rats.Install("main.apk", main, devices...)
-	}
-	rats.Install("test.apk", testApk, devices...)
-
-	rats.Unlock(devices)
-
-	finished, out := android.RunTests(manifest, devices)
-
-	var s *test.TestSuites
-SuitesLoop:
-	for {
-		select {
-		case s = <-out:
-			break SuitesLoop
-		case device := <-finished:
-			go func() {
-				rats.Uninstall(manifest.Package, device)
-				rats.Uninstall(manifest.Instrument.Target, device)
-				rats.Release(device)
-			}()
-		}
+	_, err = testBuf.ReadFrom(testApk)
+	if err != nil {
+		return err
 	}
 
-	s.Name = uuid
-	s.Timestamp = time.Now()
-	if msg != "" {
-		s.Message = msg
-	}
+	msg.Run.Binary["main"] = mainBuf.Bytes()
+	msg.Run.Binary["test"] = testBuf.Bytes()
+
+	msg.Run.Metadata["count"] = r.FormValue("count")
+
+	msg.Run.Metadata["serialList"] = r.FormValue("serials")
+	msg.Run.Metadata["strict"] = r.FormValue("strict")
+	msg.Run.Metadata["msg"] = r.FormValue("message")
 
 	//if dbErr := db.C("runs").Insert(&s); dbErr != nil {
 	//w.WriteHeader(http.StatusConflict)
 	//json.NewEncoder(w).Encode(dbErr.Error())
 	//}
 
-	if !s.Success {
+	err = daemon.Send(msg)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	return json.NewEncoder(w).Encode(s)
+	msg = &proto.Message{}
+	err = receiver.Receive(msg)
+	if err != nil {
+		log.Printf("Receive error: %s\n", err)
+	}
+
+	fmt.Fprint(w, string(msg.Result))
+	return nil
 }
 
 func GetDevices(w http.ResponseWriter, r *http.Request) error {
@@ -142,46 +110,6 @@ func PingHandler(w http.ResponseWriter, r *http.Request) error {
 
 func init() {
 	flag.Parse()
-}
-
-func tryStartAdb() {
-	path := os.ExpandEnv("$ANDROID_HOME")
-	if path != "" {
-		path = filepath.Join(path, "platform-tools", "adb")
-		b, err := exec.Command(path, "start-server").CombinedOutput()
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Println(string(b))
-		}
-	}
-}
-
-func refreshDevices(a *adb.Adb, inRecover bool) {
-	defer func() {
-		if e := recover(); e != nil {
-			if !inRecover && a == adb.Default {
-				fmt.Println("Couldn't connect to adb, attempting to recover")
-				tryStartAdb()
-				refreshDevices(a, true)
-			} else if inRecover {
-				fmt.Println("Still couldn't connect.  Make sure adb exists in $ANDROID_HOME\n\tor manually start it with 'adb start-server'")
-				os.Exit(2)
-			} else {
-				fmt.Println(e)
-				os.Exit(2)
-			}
-		}
-	}()
-	rats.UpdateAdb(a)
-}
-
-func main() {
-	conn := adb.Default
-	if *adb_address != "localhost" || *adb_port != 5037 {
-		conn = adb.Connect(*adb_address, *adb_port)
-	}
-	go refreshDevices(conn, false)
 
 	r := mux.NewRouter()
 
@@ -194,6 +122,10 @@ func main() {
 	r.PathPrefix("/").Handler(http.FileServer(rice.MustFindBox(`public`).HTTPBox()))
 
 	http.Handle("/", r)
+}
+
+func main() {
+	go listenRpc()
 
 	log.Printf("Listening on port %d\n", *port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil); err != nil {
