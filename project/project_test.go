@@ -2,6 +2,7 @@ package project
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/wmbest2/rats/api"
 	"github.com/wmbest2/rats/db"
 	"testing"
 )
@@ -11,7 +12,7 @@ func TestProjectCreation(t *testing.T) {
 	Convey("Given a fresh database", t, func() {
 
 		Convey("A Project token table should be created", func() {
-			_, err := db.Conn.Exec(`DELETE FROM project_tokens`)
+			_, err := db.Conn.Exec(`DELETE FROM api_tokens`)
 			So(err, ShouldBeNil)
 		})
 
@@ -26,8 +27,7 @@ func TestProjectCreation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Then a token should also be generated", func() {
-				var token ProjectToken
-				err := db.Conn.QueryRow(findToken, project.Id).Scan(&token.Token, &token.TokenEncrypted, &token.Project, &token.CreatedOn)
+				_, err := api.FetchToken(project)
 				So(err, ShouldBeNil)
 			})
 
@@ -80,31 +80,17 @@ func TestProjectCanOnlyHaveOneKey(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(project, ShouldNotBeNil)
 
-			token, err := project.FetchToken()
+			token, err := api.FetchToken(project)
 			So(token, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 
-			token_value, err := project.GenerateToken()
+			token_value, err := api.GenerateToken(project)
 			So(token_value, ShouldNotEqual, token)
 
 			Convey("Then it should replace the existing", func() {
-				token, err := project.FetchToken()
+				token, err := api.FetchToken(project)
 				So(token_value, ShouldEqual, token)
 				So(err, ShouldBeNil)
-			})
-		})
-
-		Convey("When a new token is generated with an invalid bcrypt cost", func() {
-			project, err := Find("check")
-			So(err, ShouldBeNil)
-			So(project, ShouldNotBeNil)
-
-			DefaultCost = 65
-			token_value, err := project.GenerateToken()
-
-			Convey("Then it should throw an error", func() {
-				So(err, ShouldNotBeNil)
-				So(token_value, ShouldEqual, "")
 			})
 		})
 	})
