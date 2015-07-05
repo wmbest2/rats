@@ -18,6 +18,7 @@ import (
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/rats/agent/android"
 	"github.com/wmbest2/rats/agent/proto"
+	"github.com/wmbest2/rats/db"
 	"github.com/wmbest2/rats/rats"
 	"github.com/wmbest2/rats/test"
 )
@@ -57,7 +58,7 @@ func refreshDevices(a *adb.Adb, inRecover bool) {
 	rats.UpdateAdb(a)
 }
 
-func run(p *proto.Run) *test.TestSuites {
+func run(p *proto.Run) *test.TestRun {
 	log.Println("Starting new test run")
 	start := time.Now()
 
@@ -96,7 +97,7 @@ func run(p *proto.Run) *test.TestSuites {
 
 	finished, out := android.RunTests(manifest, devices)
 
-	var s *test.TestSuites
+	var s *test.TestRun
 SuitesLoop:
 	for {
 		select {
@@ -114,7 +115,7 @@ SuitesLoop:
 	s.Name = p.Metadata["uuid"]
 	s.Timestamp = time.Now()
 	if p.Metadata["msg"] != "" {
-		s.Message = p.Metadata["msg"]
+		s.Message = db.NewNullString(p.Metadata["msg"])
 	}
 
 	log.Printf("Test run completed in %s across %d device(s)\n", time.Since(start), len(devices))

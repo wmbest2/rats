@@ -108,6 +108,7 @@ func GetDevices(w http.ResponseWriter, r *http.Request) error {
 		Command:   proto.Devices,
 		Responder: remoteSender,
 	})
+
 	if err != nil {
 		return err
 	}
