@@ -1,6 +1,7 @@
 package device
 
 import (
+	"github.com/wmbest2/rats/test"
 	"io"
 )
 
@@ -14,5 +15,5 @@ type Device interface {
 	Release()
 	InUse() bool
 
-	RunTest(app io.Reader, test io.Reader) (chan TestSuite, chan bool)
+	RunTest(app io.Reader, test io.Reader) (chan test.TestSuite, chan bool)
 }

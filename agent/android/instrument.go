@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
+	"github.com/wmbest2/rats/db"
 	"github.com/wmbest2/rats/rats"
 	"github.com/wmbest2/rats/test"
 	"regexp"
@@ -140,13 +141,13 @@ func parseInstrumentation(suite *test.TestSuite, in chan []byte) {
 	}
 }
 
-func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *test.TestSuites) {
+func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *test.TestRun) {
 	finished := make(chan *rats.Device)
-	out := make(chan *test.TestSuites)
+	out := make(chan *test.TestRun)
 	go func() {
 		in := make(chan *RunPair)
 		count := 0
-		suites := &test.TestSuites{Success: true}
+		suites := &test.TestRun{Success: db.NewNullBool(true)}
 
 		for _, d := range devices {
 			go RunTest(d, manifest, in)
@@ -158,8 +159,8 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 			case run := <-in:
 				finished <- run.Device
 				suites.TestSuites = append(suites.TestSuites, *run.Tests)
-				suites.Time += run.Tests.Time
-				suites.Success = suites.Success && run.Tests.Failures == 0 && run.Tests.Errors == 0
+				suites.Time.Float64 += run.Tests.Time
+				suites.Success.Bool = suites.Success.Bool && run.Tests.Failures == 0 && run.Tests.Errors == 0
 				count--
 			}
 
@@ -176,7 +177,7 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := adb.Shell(device, "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
-	suite := test.TestSuite{Hostname: device.Serial, Name: device.String()}
+	suite := test.TestSuite{Hostname: db.NewNullString(device.Serial), Name: db.NewNullString(device.String())}
 	parseInstrumentation(&suite, in)
 	out <- &RunPair{Tests: &suite, Device: device}
 }
@@ -184,7 +185,7 @@ func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair
 func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := adb.Shell(device, "am", "instrument", "-r", "-w", testRunner)
-	suite := test.TestSuite{Hostname: device.Serial, Name: device.String()}
+	suite := test.TestSuite{Hostname: db.NewNullString(device.Serial), Name: db.NewNullString(device.String())}
 	parseInstrumentation(&suite, in)
 
 	out <- &RunPair{Tests: &suite, Device: device}

@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/rats/agent/android"
+	"github.com/wmbest2/rats/db"
 	"github.com/wmbest2/rats/rats"
 	"github.com/wmbest2/rats/test"
 	"log"
@@ -96,11 +97,12 @@ func RunTests(w http.ResponseWriter, r *http.Request) error {
 
 	finished, out := android.RunTests(manifest, devices)
 
-	var s *test.TestSuites
+	var s *test.TestRun
 SuitesLoop:
 	for {
 		select {
-		case s = <-out:
+		case suites := <-out:
+			s = suites
 			break SuitesLoop
 		case device := <-finished:
 			go func() {
@@ -114,7 +116,7 @@ SuitesLoop:
 	s.Name = uuid
 	s.Timestamp = time.Now()
 	if msg != "" {
-		s.Message = msg
+		s.Message = db.NewNullString(msg)
 	}
 
 	//if dbErr := db.C("runs").Insert(&s); dbErr != nil {
@@ -122,7 +124,7 @@ SuitesLoop:
 	//json.NewEncoder(w).Encode(dbErr.Error())
 	//}
 
-	if !s.Success {
+	if !s.Success.Bool {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 

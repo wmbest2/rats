@@ -1,12 +1,13 @@
 package agent
 
 import (
-	"github.com/wmbest2/rats-server/rats/device"
+	"github.com/wmbest2/rats/device"
+	"io"
 )
 
 type Agent interface {
-	List() []Device
-	Reserve(d ...Device) bool
-	Release(d ...Device) bool
-	RunTest(devices []Device, app io.Reader, test io.Reader)
+	List() []device.Device
+	Reserve(d ...device.Device) bool
+	Release(d ...device.Device) bool
+	RunTest(devices []device.Device, app io.Reader, test io.Reader)
 }

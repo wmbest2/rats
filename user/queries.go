@@ -2,7 +2,6 @@ package user
 
 import (
 	"github.com/wmbest2/rats/db"
-	"log"
 )
 
 const (
@@ -48,15 +47,8 @@ const (
 )
 
 func init() {
-	_, err := db.Conn.Exec(createTable)
-	if err != nil {
-		log.Println(err)
-	}
-
-	_, err = db.Conn.Exec(createOauthTable)
-	if err != nil {
-		log.Println(err)
-	}
+	db.ExecOrLog(createTable)
+	db.ExecOrLog(createOauthTable)
 
 	New("admin", "admin", true)
 }

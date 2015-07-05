@@ -1,87 +1,37 @@
 package test
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	. "github.com/smartystreets/goconvey/convey"
-	"log"
 	"testing"
+
+	"github.com/wmbest2/rats/api"
+	"github.com/wmbest2/rats/project"
 )
 
-var (
-	testcase = `<?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="abcd" time="0.069">
-	<testsuite errors="1" failures="1" hostname="test-macbook-pro.local"
-		name="tests.ATest" tests="3" time="0.069" timestamp="2009-12-19T17:58:59">
-	  <properties>
-		<property name="java.vendor" value="Sun Microsystems Inc." />
-		<property name="jtreg.home" value="/Users/mahmood/research/jtreg" />
-		<property name="sun.java.launcher" value="SUN_STANDARD" />
-		<property name="sun.management.compiler" value="HotSpot 64-Bit Server Compiler" />
-		<property name="os.name" value="Darwin" />
-		<property name="java.specification.version" value="1.6" />
-	  </properties>
-	  <testcase classname="tests.ATest" name="error" time="0.0060">
-		<error type="java.lang.RuntimeException">java.lang.RuntimeException
-		at tests.ATest.error(ATest.java:11)
-	</error>
-	  </testcase>
-	  <testcase classname="tests.ATest" name="fail" time="0.0020">
-		<failure type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: 
-		at tests.ATest.fail(ATest.java:9)
-	</failure>
-	  </testcase>
-	  <testcase classname="tests.ATest" name="sucess" time="0.0" />
-	  <system-out><![CDATA[here
-	]]></system-out>
-	  <system-err><![CDATA[]]></system-err>
-	</testsuite>
-</testsuites>	`
-	withNoTestSuites    = `<testsuites name="SomeTest" time="0"></testsuites>`
-	withSingleTestSuite = `<testsuites name="SomeTest" time="0"><testsuite tests="0" time="0" name="AllAndroidTests"><properties></properties></testsuite></testsuites>`
-)
+func TestCreateAndUpdateTestRun(t *testing.T) {
 
-func TestXmlOutput(t *testing.T) {
+	project, _ := project.New("test_project_for_test_package")
+	token, _ := api.FindToken(project)
 
-	Convey("Given a TestSuites object", t, func() {
-		suites := TestSuites{Name: "SomeTest"}
-		So(suites, ShouldNotBeNil)
-
-		out, _ := xml.MarshalIndent(&suites, "", "     ")
-		So(withNoTestSuites, ShouldEqual, string(out))
-
-		Convey("When a TestSuite is added", func() {
-			suite := TestSuite{Name: "AllAndroidTests", Tests: 0}
-			suites.TestSuites = append(suites.TestSuites, suite)
-
-			out, _ := xml.Marshal(&suites)
-
-			Convey("Then the xml should contain the correct Test Suite information", func() {
-				So(withSingleTestSuite, ShouldEqual, string(out))
-			})
-		})
-	})
-
-	Convey("Given a Impoted XML object", t, func() {
-		suites := TestSuites{}
-		err := xml.Unmarshal([]byte(testcase), &suites)
-
-		Convey("When there are no errors", func() {
+	Convey("Given a newly created TestRun", t, func() {
+		run, err := NewRun(project.Id, token.Id)
+		Convey("When There are no errors", func() {
 			So(err, ShouldBeNil)
-			Convey("Then suites should contain the appropriate info", func() {
-				So(suites, ShouldNotBeNil)
-				So(0.069, ShouldEqual, suites.Time)
-
-				out, _ := json.Marshal(&suites)
-				log.Println(string(out))
-				out, _ = xml.MarshalIndent(&suites, "", "     ")
-				log.Println(string(out))
+			Convey("Then The Run should exist in the database", func() {
+				fromDb, err := FindTestRun(run.Id, false)
+				So(err, ShouldBeNil)
+				So(fromDb.Id, ShouldEqual, run.Id)
 			})
 
-			Convey("And should contain a test suite", func() {
-				So(suites.TestSuites, ShouldNotBeNil)
-				So(1, ShouldEqual, len(suites.TestSuites))
-			})
 		})
+
+		Convey("When Fields are updated and the Object is saved", func() {
+
+			Convey("Then the data should be updated in the databse", func() {
+			})
+
+		})
+
 	})
+
 }

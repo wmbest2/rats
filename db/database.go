@@ -12,6 +12,13 @@ var (
 	Conn *sql.DB
 )
 
+func ExecOrLog(cmd string) {
+	_, err := Conn.Exec(cmd)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func init() {
 	dburl := os.Getenv("DATABASE_URL")
 	if dburl == "" {
