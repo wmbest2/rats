@@ -6,8 +6,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"log"
 	"testing"
-
-	"github.com/wmbest2/rats/db"
 )
 
 var (
@@ -56,7 +54,7 @@ func TestXmlOutput(t *testing.T) {
 		So(string(out), ShouldEqual, withNoTestSuites)
 
 		Convey("When a TestSuite is added", func() {
-			suite := TestSuite{Name: db.NewNullString("AllAndroidTests"), Tests: 0}
+			suite := TestSuite{Name: NewNullString("AllAndroidTests"), Tests: 0}
 			suites.TestSuites = append(suites.TestSuites, suite)
 
 			out, err := xml.Marshal(&suites)
