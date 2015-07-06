@@ -3,21 +3,53 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
 	"github.com/wmbest2/rats/agent/android"
 	"github.com/wmbest2/rats/rats"
+	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 )
+
+func init() {
+	conn := adb.Default
+	go refreshDevices(conn, false)
+}
+
+func tryStartAdb() {
+	path := os.ExpandEnv("$ANDROID_HOME")
+	if path != "" {
+		path = filepath.Join(path, "platform-tools", "adb")
+		exec.Command(path, "start-server").CombinedOutput()
+	}
+}
+
+func refreshDevices(a *adb.Adb, inRecover bool) {
+	defer func() {
+		if e := recover(); e != nil {
+			if !inRecover && a == adb.Default {
+				tryStartAdb()
+				refreshDevices(a, true)
+			}
+		}
+	}()
+	rats.UpdateAdb(a)
+}
 
 func main() {
 	argCount := len(os.Args)
 	if argCount != 2 && argCount != 3 {
-		fmt.Println("Usage: cli-client <main apk [optional]> <test apk>")
-		fmt.Println("   * main apk not required for library tests")
+		log.Println("Usage: cli-client <main apk [optional]> <test apk>")
+		log.Println("   * main apk not required for library tests")
 		return
 	}
 
-	devices := <-rats.GetAllDevices()
+	var devices []*rats.Device
+	for len(devices) == 0 {
+		devices = <-rats.GetAllDevices()
+	}
 
 	var manifest *apk.Manifest
 
@@ -26,11 +58,16 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		rats.Install("apk.apk", file, devices...)
-		if manifest == nil {
-			fi, _ := file.Stat()
-			manifest = rats.GetManifest(file, fi.Size())
-		}
+
+		fi, _ := file.Stat()
+		man := rats.GetManifest(file, fi.Size())
+		log.Printf("Installing package %s\n", man.Package)
+
+		manifest = man
+
+		rats.Install(file.Name(), file, devices...)
+
+		log.Printf("\t -> Install Complete\n")
 
 		file.Close()
 	}
@@ -40,13 +77,19 @@ func main() {
 		device.Unlock()
 	}
 
-	//testFile := os.Args[len(os.Args)-1]
+	log.Printf("Running Tests\n")
 
-	_, runs := android.RunTests(manifest, devices)
+	finished, runs := android.RunTests(manifest, devices)
 
-	str, err := xml.Marshal(*<-runs)
-	if err == nil {
-		fmt.Println(string(str))
+	for range finished {
+		run := <-runs
+		str, err := xml.Marshal(run)
+
+		log.Printf("\t -> Received results...\n")
+
+		if err == nil {
+			fmt.Println(string(str))
+		}
 	}
 
 	rats.Uninstall(manifest.Package, devices...)

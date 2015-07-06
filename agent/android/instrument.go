@@ -6,6 +6,7 @@ import (
 	"github.com/wmbest2/android/apk"
 	"github.com/wmbest2/rats/rats"
 	"github.com/wmbest2/rats/test"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -143,7 +144,7 @@ func parseInstrumentation(suite *test.TestSuite, in chan []byte) {
 func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *test.TestRun) {
 	finished := make(chan *rats.Device)
 	out := make(chan *test.TestRun)
-	go func() {
+	go func(out chan *test.TestRun, finished chan *rats.Device) {
 		in := make(chan *RunPair)
 		count := 0
 		suites := &test.TestRun{Success: test.NewNullBool(true)}
@@ -153,9 +154,12 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 			count++
 		}
 
+		log.Printf("\t -> Waiting for %d Tests\n", count)
+
 		for {
 			select {
 			case run := <-in:
+				log.Printf("\t -> Sent result\n")
 				finished <- run.Device
 				suites.TestSuites = append(suites.TestSuites, *run.Tests)
 				suites.Time.Float64 += run.Tests.Time
@@ -168,7 +172,9 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 			}
 		}
 		out <- suites
-	}()
+		close(finished)
+		close(out)
+	}(out, finished)
 
 	return finished, out
 }
@@ -183,9 +189,12 @@ func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair
 
 func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
+
 	in := adb.Shell(device, "am", "instrument", "-r", "-w", testRunner)
 	suite := test.TestSuite{Hostname: test.NewNullString(device.Serial), Name: test.NewNullString(device.String())}
 	parseInstrumentation(&suite, in)
+
+	log.Printf("\t -> Finished test on %s\n", device.Serial)
 
 	out <- &RunPair{Tests: &suite, Device: device}
 }
