@@ -18,7 +18,7 @@ import (
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/rats/agent/android"
 	"github.com/wmbest2/rats/agent/proto"
-	"github.com/wmbest2/rats/rats"
+	"github.com/wmbest2/rats/core"
 	"github.com/wmbest2/rats/test"
 )
 
@@ -94,7 +94,9 @@ func run(p *proto.Run) *test.TestRun {
 
 	rats.Unlock(devices)
 
-	finished, out := android.RunTests(manifest, devices)
+	artifacts := []string{"coverage.ec"}
+
+	finished, out := android.RunTests(manifest, devices, artifacts)
 
 	var s *test.TestRun
 SuitesLoop:
@@ -195,6 +197,7 @@ func main() {
 				}
 			case proto.Devices:
 				b, err := json.Marshal(<-rats.GetAllDevices())
+
 				if err != nil {
 					log.Fatal(err)
 				}

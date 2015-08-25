@@ -1,19 +1,26 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
+	"flag"
 	"fmt"
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
 	"github.com/wmbest2/rats/agent/android"
-	"github.com/wmbest2/rats/rats"
+	"github.com/wmbest2/rats/core"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
+var (
+	jsonEnabled = flag.Bool("json", false, "Log debug information")
+)
+
 func init() {
+	flag.Parse()
 	conn := adb.Default
 	go refreshDevices(conn, false)
 }
@@ -39,10 +46,10 @@ func refreshDevices(a *adb.Adb, inRecover bool) {
 }
 
 func main() {
-	argCount := len(os.Args)
+	argCount := len(flag.Args())
 	if argCount != 2 && argCount != 3 {
-		log.Println("Usage: cli-client <main apk [optional]> <test apk>")
-		log.Println("   * main apk not required for library tests")
+		fmt.Println("Usage: cli-client <main apk [optional]> <test apk>")
+		fmt.Println("   * main apk not required for library tests")
 		return
 	}
 
@@ -53,7 +60,7 @@ func main() {
 
 	var manifest *apk.Manifest
 
-	for _, arg := range os.Args[1:] {
+	for _, arg := range flag.Args()[1:] {
 		file, err := os.Open(arg)
 		if err != nil {
 			panic(err)
@@ -65,7 +72,7 @@ func main() {
 
 		manifest = man
 
-		rats.Install(file.Name(), file, devices...)
+		//rats.Install(file.Name(), file, devices...)
 
 		log.Printf("\t -> Install Complete\n")
 
@@ -79,11 +86,19 @@ func main() {
 
 	log.Printf("Running Tests\n")
 
-	finished, runs := android.RunTests(manifest, devices)
+	coverageFile := fmt.Sprintf("/data/data/%s/files/coverage.ec", manifest.Instrument.Target)
+
+	finished, runs := android.RunTests(manifest, devices, []string{coverageFile})
 
 	for range finished {
 		run := <-runs
-		str, err := xml.Marshal(run)
+		var str []byte
+		var err error
+		if *jsonEnabled {
+			str, err = json.Marshal(run)
+		} else {
+			str, err = xml.Marshal(run)
+		}
 
 		log.Printf("\t -> Received results...\n")
 
@@ -92,6 +107,6 @@ func main() {
 		}
 	}
 
-	rats.Uninstall(manifest.Package, devices...)
-	rats.Uninstall(manifest.Instrument.Target, devices...)
+	//rats.Uninstall(manifest.Package, devices...)
+	//rats.Uninstall(manifest.Instrument.Target, devices...)
 }

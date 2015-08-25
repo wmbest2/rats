@@ -1,10 +1,11 @@
 package android
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/wmbest2/android/adb"
 	"github.com/wmbest2/android/apk"
-	"github.com/wmbest2/rats/rats"
+	"github.com/wmbest2/rats/core"
 	"github.com/wmbest2/rats/test"
 	"log"
 	"regexp"
@@ -114,6 +115,9 @@ func parseInstrumentation(suite *test.TestSuite, in chan []byte) {
 				case lastToken.Type == LONG_MSG:
 					currentTest.Stack = fmt.Sprintf("Test failed to run to completion. Reason: '%s'. Check device logcat for details", currentTest.Stack)
 					fallthrough
+				case v == "-3":
+					currentTest.Skipped = true
+					suite.Skipped++
 				case v == "-2":
 					currentTest.Failures = append(currentTest.Failures, currentTest.Stack)
 					suite.Failures++
@@ -141,10 +145,10 @@ func parseInstrumentation(suite *test.TestSuite, in chan []byte) {
 	}
 }
 
-func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device, chan *test.TestRun) {
+func RunTests(manifest *apk.Manifest, devices []*rats.Device, artifacts []string) (chan *rats.Device, chan *test.TestRun) {
 	finished := make(chan *rats.Device)
 	out := make(chan *test.TestRun)
-	go func(out chan *test.TestRun, finished chan *rats.Device) {
+	go func(out chan *test.TestRun, finished chan *rats.Device, artifacts []string) {
 		in := make(chan *RunPair)
 		count := 0
 		suites := &test.TestRun{Success: test.NewNullBool(true)}
@@ -160,6 +164,23 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 			select {
 			case run := <-in:
 				log.Printf("\t -> Sent result\n")
+
+				for _, artifact := range artifacts {
+					buffer := bytes.NewBuffer(nil)
+					file := fmt.Sprintf("%s", artifact)
+
+					log.Printf("\t -> Fetching file %s\n", file)
+					adb.ShellSync(run.Device, fmt.Sprintf("run-as %s chmod 666 %s", manifest.Instrument.Target, file))
+					err := adb.Pull(run.Device, buffer, file)
+
+					if err == nil {
+						result := test.Artifact{Name: test.NewNullString(artifact), Data: buffer.Bytes()}
+						run.Tests.Artifacts = append(run.Tests.Artifacts, result)
+					} else {
+						log.Printf("\t -> %s\n", err)
+					}
+				}
+
 				finished <- run.Device
 				suites.TestSuites = append(suites.TestSuites, *run.Tests)
 				suites.Time.Float64 += run.Tests.Time
@@ -174,14 +195,14 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device) (chan *rats.Device
 		out <- suites
 		close(finished)
 		close(out)
-	}(out, finished)
+	}(out, finished, artifacts)
 
 	return finished, out
 }
 
 func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
-	in := adb.Shell(device, "am", "instrument", "-r", "-e", "log", "true", "-w", testRunner)
+	in := adb.Shell(device, "am", "instrument", "-r", "true", "-w", "-e", "log", testRunner)
 	suite := test.TestSuite{Hostname: test.NewNullString(device.Serial), Name: test.NewNullString(device.String())}
 	parseInstrumentation(&suite, in)
 	out <- &RunPair{Tests: &suite, Device: device}
@@ -190,7 +211,7 @@ func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair
 func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 
-	in := adb.Shell(device, "am", "instrument", "-r", "-w", testRunner)
+	in := adb.Shell(device, "am", "instrument", "-r", "-w", "-e", "coverage", "true", testRunner)
 	suite := test.TestSuite{Hostname: test.NewNullString(device.Serial), Name: test.NewNullString(device.String())}
 	parseInstrumentation(&suite, in)
 

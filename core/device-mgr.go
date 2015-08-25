@@ -1,4 +1,4 @@
-package rats
+package core
 
 import (
 	"errors"

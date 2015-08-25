@@ -49,13 +49,15 @@ type TestSuite struct {
 	Name       NullString `xml:"name,attr" json:"name"`
 	SystemOut  NullString `xml:"system-out,omitempty" json:"system-out,omitempty"`
 	SystemErr  NullString `xml:"system-err,omitempty" json:"system-out,omitempty"`
+	Artifacts  []Artifact `xml:"-" json:"artifacts"`
 	TestCases  []TestCase `xml:"testcase" json:"cases"`
 }
 
 type Artifact struct {
-	Id    int64  `xml:"-" json:"id"`
-	RunId int64  `xml:"-" json:"run_id"`
-	Data  []byte `xml:"-" json:"data"`
+	Id      int64      `xml:"-" json:"id"`
+	SuiteId int64      `xml:"-" json:"suite_id"`
+	Name    NullString `xml:"-" json:"name"`
+	Data    []byte     `xml:"-" json:"data"`
 }
 
 type TestRun struct {
@@ -70,6 +72,5 @@ type TestRun struct {
 	Timestamp time.Time  `xml:"-" json:"timestamp"`
 	CommitId  NullString `xml:"-" json:"commit"`
 	Message   NullString `xml:"-" json:"description"`
-	Artifacts []Artifact `xml:"-" json:"artifacts"`
 	Success   NullBool   `xml:"-" json:"success"`
 }

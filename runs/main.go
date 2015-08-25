@@ -39,21 +39,19 @@ func FindTestRun(runId int64, loadAll bool) (*test.TestRun, error) {
 	}
 
 	if loadAll {
-		run.TestSuites, err = run.FindTestSuites(loadAll)
+		run.TestSuites, err = FindTestSuites(run, loadAll)
 	}
 
 	return run, err
 }
 
-//func (r *TestRun) FindArtifacts(recursive bool) ([]test.Artifact, error) {
+func FindArtifacts(r *test.TestRun, recursive bool) ([]test.Artifact, error) {
+	return nil, nil
+}
 
-//return nil, nil
-//}
-
-//func (r *TestRun) FindTestSuites(recursive bool) ([]TestSuite, error) {
-
-//return nil, nil
-//}
+func FindTestSuites(r *test.TestRun, recursive bool) ([]test.TestSuite, error) {
+	return nil, nil
+}
 
 //func (s *TestSuite) FindTestCases(recusive bool) ([]TestCase, error) {
 

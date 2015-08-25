@@ -27,7 +27,7 @@ func TestCreateAndUpdateTestRun(t *testing.T) {
 
 		Convey("When Fields are updated and the Object is saved", func() {
 
-			Convey("Then the data should be updated in the databse", func() {
+			Convey("Then the data should be updated in the database", func() {
 			})
 
 		})

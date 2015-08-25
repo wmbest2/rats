@@ -36,10 +36,10 @@ const (
 	createArtifactTable = `
 	CREATE TABLE run_artifacts (
 		id         SERIAL PRIMARY KEY,
-		run_id     SERIAL,
+		suite_id   SERIAL,
 		name       VARCHAR UNIQUE,
 		data       BYTEA,
-		FOREIGN KEY (run_id) REFERENCES runs(id)
+		FOREIGN KEY (suite_id) REFERENCES suites(id)
 	)
 	`
 
