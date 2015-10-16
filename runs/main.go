@@ -20,8 +20,19 @@ func NewRun(project int64, token int64) (*test.TestRun, error) {
 func SaveRun(r *test.TestRun) error {
 	_, err := db.Conn.Exec(saveRun, r.Id, r.CommitId, r.Message, r.Time, r.Success)
 
-	// recurse to store all suites/cases etc.
+	for _, suite := range r.TestSuites {
+		err := SaveSuite(r.Id, &suite)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return err
+}
+
+func SaveSuite(run_id int64, t *test.TestSuite) error {
+	return db.Conn.QueryRow(createSuite, run_id, t.Tests, t.Failures, t.Errors, t.Skipped, t.Hostname,
+		t.Time, t.Name, t.SystemOut, t.SystemErr).Scan(&t.Id)
 }
 
 func FindTestRun(runId int64, loadAll bool) (*test.TestRun, error) {

@@ -34,7 +34,7 @@ type instToken struct {
 
 type RunPair struct {
 	Tests  *test.TestSuite
-	Device *rats.Device
+	Device *core.Device
 }
 
 func tokenForLine(line [][]byte) *instToken {
@@ -145,10 +145,10 @@ func parseInstrumentation(suite *test.TestSuite, in chan []byte) {
 	}
 }
 
-func RunTests(manifest *apk.Manifest, devices []*rats.Device, artifacts []string) (chan *rats.Device, chan *test.TestRun) {
-	finished := make(chan *rats.Device)
+func RunTests(manifest *apk.Manifest, devices []*core.Device, artifacts []string) (chan *core.Device, chan *test.TestRun) {
+	finished := make(chan *core.Device)
 	out := make(chan *test.TestRun)
-	go func(out chan *test.TestRun, finished chan *rats.Device, artifacts []string) {
+	go func(out chan *test.TestRun, finished chan *core.Device, artifacts []string) {
 		in := make(chan *RunPair)
 		count := 0
 		suites := &test.TestRun{Success: test.NewNullBool(true)}
@@ -200,7 +200,7 @@ func RunTests(manifest *apk.Manifest, devices []*rats.Device, artifacts []string
 	return finished, out
 }
 
-func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
+func LogTestSuite(device *core.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 	in := adb.Shell(device, "am", "instrument", "-r", "true", "-w", "-e", "log", testRunner)
 	suite := test.TestSuite{Hostname: test.NewNullString(device.Serial), Name: test.NewNullString(device.String())}
@@ -208,7 +208,7 @@ func LogTestSuite(device *rats.Device, manifest *apk.Manifest, out chan *RunPair
 	out <- &RunPair{Tests: &suite, Device: device}
 }
 
-func RunTest(device *rats.Device, manifest *apk.Manifest, out chan *RunPair) {
+func RunTest(device *core.Device, manifest *apk.Manifest, out chan *RunPair) {
 	testRunner := fmt.Sprintf("%s/%s", manifest.Package, manifest.Instrument.Name)
 
 	in := adb.Shell(device, "am", "instrument", "-r", "-w", "-e", "coverage", "true", testRunner)

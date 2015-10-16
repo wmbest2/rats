@@ -25,6 +25,14 @@ func TestCreateAndUpdateTestRun(t *testing.T) {
 
 		})
 
+		Convey("When searching for a different run ", func() {
+			_, err := FindTestRun(-1, false)
+			Convey("Then an Error should occure", func() {
+				So(err, ShouldNotBeNil)
+			})
+
+		})
+
 		Convey("When Fields are updated and the Object is saved", func() {
 
 			Convey("Then the data should be updated in the database", func() {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,6 +13,10 @@ import (
 	"github.com/docker/libchan"
 	"github.com/gorilla/mux"
 	"github.com/wmbest2/rats/agent/proto"
+	"github.com/wmbest2/rats/api"
+	"github.com/wmbest2/rats/project"
+	"github.com/wmbest2/rats/runs"
+	"github.com/wmbest2/rats/test"
 )
 
 var (
@@ -46,6 +51,19 @@ func RunTests(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	msg.Run.Metadata["uuid"] = uuid
+	project, err := project.Find(r.FormValue("project"))
+
+	if err != nil {
+		return err
+	}
+
+	token_id, err := api.FindEncryptedToken(r.FormValue("token"))
+
+	if err != nil {
+		return err
+	}
+
+	run, err := runs.NewRun(project.Id, token_id)
 
 	main, _, err := r.FormFile("apk")
 	testApk, _, err := r.FormFile("test-apk")
@@ -93,6 +111,21 @@ func RunTests(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if v, ok := msg.Result.([]byte); ok {
+		var recieved test.TestRun
+		err = json.Unmarshal(v, &recieved)
+
+		if err != nil {
+			return err
+		}
+
+		recieved.Id = run.Id
+
+		err = runs.SaveRun(&recieved)
+
+		if err != nil {
+			return err
+		}
+
 		fmt.Fprint(w, string(v))
 		return nil
 	}

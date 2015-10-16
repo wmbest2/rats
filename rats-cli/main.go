@@ -42,7 +42,7 @@ func refreshDevices(a *adb.Adb, inRecover bool) {
 			}
 		}
 	}()
-	rats.UpdateAdb(a)
+	core.UpdateAdb(a)
 }
 
 func main() {
@@ -53,9 +53,9 @@ func main() {
 		return
 	}
 
-	var devices []*rats.Device
+	var devices []*core.Device
 	for len(devices) == 0 {
-		devices = <-rats.GetAllDevices()
+		devices = <-core.GetAllDevices()
 	}
 
 	var manifest *apk.Manifest
@@ -67,7 +67,7 @@ func main() {
 		}
 
 		fi, _ := file.Stat()
-		man := rats.GetManifest(file, fi.Size())
+		man := core.GetManifest(file, fi.Size())
 		log.Printf("Installing package %s\n", man.Package)
 
 		manifest = man

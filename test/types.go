@@ -32,7 +32,7 @@ func NewNullBool(val bool) NullBool {
  */
 
 //MarshalJSON is a wrapper around sql.NullString that satifies json.Marshaler
-func (nf *NullString) MarshalJSON() ([]byte, error) {
+func (nf NullString) MarshalJSON() ([]byte, error) {
 	var data interface{}
 
 	if !nf.Valid {
@@ -44,8 +44,14 @@ func (nf *NullString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(data)
 }
 
+func (nf NullString) UnmarshalJSON(data []byte) error {
+	nf.String = string(data)
+	nf.Valid = true
+	return nil
+}
+
 //MarshalJSON is a wrapper around sql.NullBool that satifies json.Marshaler
-func (nf *NullBool) MarshalJSON() ([]byte, error) {
+func (nf NullBool) MarshalJSON() ([]byte, error) {
 	var data interface{}
 
 	if !nf.Valid {
@@ -57,8 +63,15 @@ func (nf *NullBool) MarshalJSON() ([]byte, error) {
 	return json.Marshal(data)
 }
 
+func (nf NullBool) UnmarshalJSON(data []byte) error {
+	val, err := strconv.ParseBool(string(data))
+	nf.Bool = val
+	nf.Valid = err != nil
+	return nil
+}
+
 //MarshalJSON is a wrapper around sql.NullFloat64 that satifies json.Marshaler
-func (nf *NullFloat64) MarshalJSON() ([]byte, error) {
+func (nf NullFloat64) MarshalJSON() ([]byte, error) {
 	var data interface{}
 
 	if !nf.Valid {
@@ -68,6 +81,13 @@ func (nf *NullFloat64) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(data)
+}
+
+func (nf NullFloat64) UnmarshalJSON(data []byte) error {
+	val, err := strconv.ParseFloat(string(data), 64)
+	nf.Float64 = val
+	nf.Valid = err != nil
+	return nil
 }
 
 /*

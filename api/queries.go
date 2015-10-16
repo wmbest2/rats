@@ -28,6 +28,10 @@ const (
 	findToken = `
 	SELECT * FROM api_tokens WHERE parent_id = $1
 	`
+
+	findEncryptedToken = `
+	SELECT id FROM api_tokens WHERE token_encrypted = $1
+	`
 )
 
 func init() {

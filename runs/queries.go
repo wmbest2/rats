@@ -15,7 +15,7 @@ const (
 		commit     VARCHAR,
 		message    VARCHAR,
 		timestamp  TIMESTAMP NOT NULL DEFAULT NOW(),
-		time       INTEGER,
+		time       FLOAT,
 		success    BOOLEAN,
 		FOREIGN KEY (token_id) REFERENCES api_tokens(id)
 	)
@@ -26,7 +26,7 @@ const (
 	`
 
 	saveRun = `
-	UPDATE runs SET (commit, message, time, success) VALUES ($2, $3, $4, $5) where id = $1
+	UPDATE runs SET (commit, message, time, success) = ($2, $3, $4, $5) where id = $1
 	`
 
 	findRun = `
@@ -52,12 +52,17 @@ const (
 		errors     INTEGER,
 		skipped    INTEGER,
 		hostname   VARCHAR,
-		time       INTEGER,
+		time       FLOAT,
 		name       VARCHAR,
 		stdout     VARCHAR,
 		stderr     VARCHAR,
 		FOREIGN KEY (run_id) REFERENCES runs(id)
 	)
+	`
+
+	createSuite = `
+	INSERT INTO suites (run_id, tests, failures, errors, skipped, hostname, time, name, stdout, stderr) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
 	`
 
 	createSuitePropertiesTable = `
@@ -77,11 +82,16 @@ const (
 		name       VARCHAR,
 		status     VARCHAR,
 		assertions VARCHAR,
-		time       INTEGER,
+		time       FLOAT,
 		failed     BOOLEAN,
 		skipped    BOOLEAN,
 		FOREIGN KEY (suite_id) REFERENCES suites(id)
 	)
+	`
+
+	createCase = `
+	INSERT INTO cases (suite_id, classname, name, status, assertions, time, failed, skipped) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id
 	`
 
 	createStackTable = `
@@ -92,6 +102,11 @@ const (
 		stack     VARCHAR,
 		FOREIGN KEY (case_id) REFERENCES cases(id)
 	)
+	`
+
+	createStack = `
+	INSERT INTO stacktraces (case_id, type, stack) 
+		VALUES ($1, $2, $3, $4) RETURNING id
 	`
 )
 

@@ -52,6 +52,17 @@ func GenerateToken(holder TokenHolder) (string, error) {
 	return hash, err
 }
 
+func FindEncryptedToken(token string) (int64, error) {
+	var id int64
+	err := db.Conn.QueryRow(findEncryptedToken, token).Scan(&id)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return id, nil
+}
+
 func FindToken(holder TokenHolder) (*Token, error) {
 	var token Token
 	println(holder.Identifier())

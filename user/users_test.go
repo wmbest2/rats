@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestProjectCreation(t *testing.T) {
+func TestUserCreation(t *testing.T) {
 
 	Convey("Given a fresh database", t, func() {
 

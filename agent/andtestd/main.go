@@ -54,7 +54,7 @@ func refreshDevices(a *adb.Adb, inRecover bool) {
 			}
 		}
 	}()
-	rats.UpdateAdb(a)
+	core.UpdateAdb(a)
 }
 
 func run(p *proto.Run) *test.TestRun {
@@ -69,30 +69,30 @@ func run(p *proto.Run) *test.TestRun {
 	size := len(p.Binary["test"])
 
 	count, _ := strconv.Atoi(p.Metadata["count"])
-	filter := &rats.DeviceFilter{
+	filter := &core.DeviceFilter{
 		Count:  count,
 		Strict: p.Metadata["strict"] == "true",
 	}
 	filter.Serials = serials
 
-	manifest := rats.GetManifest(bytes.NewReader(p.Binary["test"]), int64(size))
+	manifest := core.GetManifest(bytes.NewReader(p.Binary["test"]), int64(size))
 	filter.MinSdk = manifest.Sdk.Min
 	filter.MaxSdk = manifest.Sdk.Max
 
-	devices := <-rats.GetDevices(filter)
-	rats.Reserve(devices...)
+	devices := <-core.GetDevices(filter)
+	core.Reserve(devices...)
 
 	// Remove old if left over
-	rats.Uninstall(manifest.Package, devices...)
-	rats.Uninstall(manifest.Instrument.Target, devices...)
+	core.Uninstall(manifest.Package, devices...)
+	core.Uninstall(manifest.Instrument.Target, devices...)
 
 	// Install New
 	if main != nil {
-		rats.Install("main.apk", bytes.NewBuffer(p.Binary["main"]), devices...)
+		core.Install("main.apk", bytes.NewBuffer(p.Binary["main"]), devices...)
 	}
-	rats.Install("test.apk", bytes.NewBuffer(p.Binary["test"]), devices...)
+	core.Install("test.apk", bytes.NewBuffer(p.Binary["test"]), devices...)
 
-	rats.Unlock(devices)
+	core.Unlock(devices)
 
 	artifacts := []string{"coverage.ec"}
 
@@ -106,9 +106,9 @@ SuitesLoop:
 			break SuitesLoop
 		case device := <-finished:
 			go func() {
-				rats.Uninstall(manifest.Package, device)
-				rats.Uninstall(manifest.Instrument.Target, device)
-				rats.Release(device)
+				core.Uninstall(manifest.Package, device)
+				core.Uninstall(manifest.Instrument.Target, device)
+				core.Release(device)
 			}()
 		}
 	}
@@ -196,7 +196,7 @@ func main() {
 					log.Fatal(err)
 				}
 			case proto.Devices:
-				b, err := json.Marshal(<-rats.GetAllDevices())
+				b, err := json.Marshal(<-core.GetAllDevices())
 
 				if err != nil {
 					log.Fatal(err)
