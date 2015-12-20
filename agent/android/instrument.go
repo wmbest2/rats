@@ -153,6 +153,8 @@ func RunTests(manifest *apk.Manifest, devices []*core.Device, artifacts []string
 		count := 0
 		suites := &test.TestRun{Success: test.NewNullBool(true)}
 
+		suites.Time.Valid = true
+
 		for _, d := range devices {
 			go RunTest(d, manifest, in)
 			count++
