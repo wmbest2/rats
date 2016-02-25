@@ -10,8 +10,9 @@ import (
 
 func TestCreateAndUpdateTestRun(t *testing.T) {
 
-	project, _ := project.New("test_project_for_test_package")
-	token, _ := api.FindToken(project)
+	project, _ := project.New("test_project_for_test_package", true)
+	access, _ := api.FindNamedAccessByProject(project.Id)
+	token, _ := api.FindToken(access)
 
 	Convey("Given a newly created TestRun", t, func() {
 		run, err := NewRun(project.Id, token.Id)
@@ -25,7 +26,7 @@ func TestCreateAndUpdateTestRun(t *testing.T) {
 
 		})
 
-		Convey("When searching for a different run ", func() {
+		Convey("When searching for a non-existent run ", func() {
 			_, err := FindTestRun(-1, false)
 			Convey("Then an Error should occure", func() {
 				So(err, ShouldNotBeNil)

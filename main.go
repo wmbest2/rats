@@ -152,6 +152,8 @@ func GetDevices(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	log.Printf("%s", msg.Result.([]byte))
+
 	if v, ok := msg.Result.([]byte); ok {
 		fmt.Fprint(w, string(v))
 		return nil

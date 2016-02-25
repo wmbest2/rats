@@ -1,10 +1,10 @@
 package api
 
 import (
-	"code.google.com/p/go.crypto/bcrypt"
 	"crypto/md5"
 	"fmt"
 	"github.com/wmbest2/rats/db"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
@@ -12,7 +12,7 @@ type TokenType int
 
 const (
 	UserToken TokenType = iota
-	ProjectToken
+	CIToken
 )
 
 type Token struct {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.google.com/p/go.crypto/bcrypt"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/wmbest2/rats/api"
 	"github.com/wmbest2/rats/db"

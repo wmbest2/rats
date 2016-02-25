@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"github.com/wmbest2/rats/api"
 	"github.com/wmbest2/rats/db"
 	"time"
@@ -12,7 +13,7 @@ type Project struct {
 	CreatedOn time.Time `json:"created_on,omitempty"`
 }
 
-func New(name string) (*Project, error) {
+func New(name string, createToken bool) (*Project, error) {
 	project := &Project{Name: name}
 
 	err := db.Conn.QueryRow(createProject, project.Name).Scan(&project.Id)
@@ -20,7 +21,9 @@ func New(name string) (*Project, error) {
 		return nil, err
 	}
 
-	api.GenerateToken(project)
+	if createToken {
+		api.NewProjectAccess(fmt.Sprintf("%s project token", name), project.Id)
+	}
 
 	return project, err
 }
@@ -33,17 +36,4 @@ func Find(name string) (*Project, error) {
 		return nil, err
 	}
 	return &project, nil
-}
-
-// Be a TokenHolder
-func (p *Project) Seed() string {
-	return p.Name
-}
-
-func (p *Project) Type() api.TokenType {
-	return api.ProjectToken
-}
-
-func (p *Project) Identifier() int64 {
-	return p.Id
 }

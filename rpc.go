@@ -49,17 +49,19 @@ func listenRpc() {
 		log.Fatal(err)
 	}
 
-	tran, err := spdy.NewTransportListener(l, spdy.NoAuthenticator)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for {
-		t, err := tran.AcceptTransport()
+		c, err := l.Accept()
 		if err != nil {
 			log.Print(err)
 			break
 		}
+
+		p, err := spdy.NewSpdyStreamProvider(c, true)
+		if err != nil {
+			log.Print(err)
+			break
+		}
+		t := spdy.NewTransport(p)
 
 		go func() {
 			for {

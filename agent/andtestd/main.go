@@ -140,10 +140,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tran, err := spdy.NewClientTransport(client)
+	p, err := spdy.NewSpdyStreamProvider(client, true)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
+	tran := spdy.NewTransport(p)
 
 	sender, err := tran.NewSendChannel()
 	if err != nil {
@@ -171,46 +172,46 @@ func main() {
 	log.Printf("Response: %s\n", resp.Command)
 
 	for {
+		log.Printf("HERHEHRHER START")
 		msg := &proto.Message{}
 		err := receiver.Receive(msg)
 		if err != nil {
 			log.Fatalf("Receive error: %s\n", err)
 		}
+		log.Printf("Response: %s\n", msg.Command)
 
-		go func() {
-			switch msg.Command {
-			case proto.Init:
-				result := run(msg.Run)
+		switch msg.Command {
+		case proto.Init:
+			result := run(msg.Run)
 
-				b, err := json.Marshal(result)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				err = msg.Responder.Send(proto.Message{
-					Command:   proto.Complete,
-					Result:    b,
-					Responder: sender,
-				})
-				if err != nil {
-					log.Fatal(err)
-				}
-			case proto.Devices:
-				b, err := json.Marshal(<-core.GetAllDevices())
-
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				err = msg.Responder.Send(proto.Message{
-					Command:   proto.Complete,
-					Result:    b,
-					Responder: sender,
-				})
-				if err != nil {
-					log.Fatal(err)
-				}
+			b, err := json.Marshal(result)
+			if err != nil {
+				log.Fatal(err)
 			}
-		}()
+
+			err = msg.Responder.Send(proto.Message{
+				Command: proto.Complete,
+				Result:  b,
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+		case proto.Devices:
+			b, err := json.Marshal(<-core.GetAllDevices())
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			err = msg.Responder.Send(proto.Message{
+				Command: proto.Complete,
+				Result:  b,
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		log.Printf("HERHEHRHER STOP")
 	}
 }

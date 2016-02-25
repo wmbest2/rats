@@ -4,7 +4,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/wmbest2/rats/api"
 	"github.com/wmbest2/rats/db"
-	"log"
 	"testing"
 )
 
@@ -13,7 +12,10 @@ func TestProjectCreation(t *testing.T) {
 	Convey("Given a fresh database", t, func() {
 
 		Convey("A Project token table should be created", func() {
-			_, err := db.Conn.Exec(`DELETE FROM api_tokens`)
+			_, err := db.Conn.Exec(`DELETE FROM runs`)
+			So(err, ShouldBeNil)
+
+			_, err = db.Conn.Exec(`DELETE FROM api_tokens`)
 			So(err, ShouldBeNil)
 		})
 
@@ -23,19 +25,22 @@ func TestProjectCreation(t *testing.T) {
 		})
 
 		Convey("When a project is created", func() {
-			project, err := New("test_project")
+			project, err := New("test_project", true)
 			So(project, ShouldNotBeNil)
 			So(err, ShouldBeNil)
 
 			Convey("Then a token should also be generated", func() {
-				_, err := api.FetchToken(project)
+				namedAccess, err := api.FindNamedAccessByProject(project.Id)
+				So(err, ShouldBeNil)
+
+				_, err = api.FetchToken(namedAccess)
 				So(err, ShouldBeNil)
 			})
 
 		})
 
 		Convey("When a project with a duplicate name is created", func() {
-			project, err := New("test_project")
+			project, err := New("test_project", false)
 			So(project, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 
@@ -60,40 +65,6 @@ func TestProjectCreation(t *testing.T) {
 				project, err := Find("tn_checker")
 				So(err, ShouldNotBeNil)
 				So(project, ShouldBeNil)
-			})
-		})
-	})
-
-}
-
-func TestProjectCanOnlyHaveOneKey(t *testing.T) {
-
-	Convey("Given an existing project token", t, func() {
-		project, err := Find("check")
-		if err != nil {
-			project, err = New("check")
-		}
-		So(err, ShouldBeNil)
-		So(project, ShouldNotBeNil)
-
-		Convey("When a new token is generated", func() {
-			project, err := Find("check")
-			So(err, ShouldBeNil)
-			So(project, ShouldNotBeNil)
-
-			log.Printf("project id: %d\n", project.Id)
-
-			token, err := api.FetchToken(project)
-			So(token, ShouldNotEqual, "")
-			So(err, ShouldBeNil)
-
-			token_value, err := api.GenerateToken(project)
-			So(token_value, ShouldNotEqual, token)
-
-			Convey("Then it should replace the existing", func() {
-				token, err := api.FetchToken(project)
-				So(token_value, ShouldEqual, token)
-				So(err, ShouldBeNil)
 			})
 		})
 	})
