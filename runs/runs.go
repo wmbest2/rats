@@ -1,69 +1,90 @@
 package runs
 
-//import (
-//"encoding/json"
-//"github.com/gorilla/mux"
-//"github.com/wmbest2/rats/test"
-//"labix.org/v2/mgo"
-//"labix.org/v2/mgo/bson"
-//"net/http"
-//"strconv"
-//)
+import (
+	"time"
 
-//type RunsPage struct {
-//Runs []*test.TestSuites `json:"runs"`
-//Meta PageMeta           `json:"meta"`
+	"github.com/wmbest2/rats/db"
+	"github.com/wmbest2/rats/test"
+)
+
+func NewRun(project int64, token int64) (*test.TestRun, error) {
+	run := &test.TestRun{TokenId: token, ProjectId: project, Timestamp: time.Now()}
+
+	err := db.Conn.QueryRow(createRun, token, project, run.Timestamp).Scan(&run.Id)
+	if err != nil {
+		return nil, err
+	}
+	return run, err
+}
+
+func SaveRun(r *test.TestRun) error {
+	_, err := db.Conn.Exec(saveRun, r.Id, r.CommitId, r.Message, r.Time, r.Success)
+
+	for _, suite := range r.TestSuites {
+		err := SaveSuite(r.Id, &suite)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return err
+}
+
+func SaveSuite(run_id int64, t *test.TestSuite) error {
+	return db.Conn.QueryRow(createSuite, run_id, t.Tests, t.Failures, t.Errors, t.Skipped, t.Hostname,
+		t.Time, t.Name, t.SystemOut, t.SystemErr).Scan(&t.Id)
+}
+
+func FindTestRun(runId int64, loadAll bool) (*test.TestRun, error) {
+	run := &test.TestRun{}
+	err := db.Conn.QueryRow(findRun, runId).Scan(&run.Id,
+		&run.TokenId,
+		&run.ProjectId,
+		&run.CommitId,
+		&run.Message,
+		&run.Timestamp,
+		&run.Time,
+		&run.Success)
+	if err != nil {
+		return nil, err
+	}
+
+	if loadAll {
+		run.TestSuites, err = FindTestSuites(run, loadAll)
+	}
+
+	return run, err
+}
+
+func FindArtifacts(r *test.TestRun, recursive bool) ([]test.Artifact, error) {
+	return nil, nil
+}
+
+func FindTestSuites(r *test.TestRun, recursive bool) ([]test.TestSuite, error) {
+	return nil, nil
+}
+
+//func (s *TestSuite) FindTestCases(recusive bool) ([]TestCase, error) {
+
+//return nil, nil
 //}
 
-//func GetRunDevice(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
-//vars := mux.Vars(r)
+//func (s *TestSuite) FindProperties() ([]Property, error) {
 
-//var runs test.TestSuites
-//q := bson.M{"name": vars["id"]}
-//s := bson.M{"testsuites": bson.M{"$elemMatch": bson.M{"hostname": vars["device"]}}}
-//query := db.C("runs").Find(q).Select(s).Limit(1)
-//query.One(&runs)
-
-//return json.NewEncoder(w).Encode(runs.TestSuites[0])
+//return nil, nil
 //}
 
-//func GetRun(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
-//vars := mux.Vars(r)
+//func (s *TestSuite) FindStacks(t StackType) ([]string, error) {
 
-//var runs test.TestSuites
-//query := db.C("runs").Find(bson.M{"name": vars["id"]}).Limit(1)
-//query.One(&runs)
-
-//return json.NewEncoder(w).Encode(runs)
+//return nil, nil
 //}
 
-//func GetRuns(w http.ResponseWriter, r *http.Request, db *mgo.Database) error {
-//p := r.URL.Query().Get("page")
-//page, err := strconv.Atoi(p)
-//if page < 1 || err != nil {
-//page = 1
+//func (s *TestSuite) SaveSuite() error {
+
+//return nil
 //}
 
-//size := 10
-//s := r.URL.Query().Get("count")
-//if s != "" {
-//size, _ = strconv.Atoi(s)
-//}
+//func (s *TestSuite) AddCase(test *TestCase) error {
 
-//var runs []*test.TestSuites
-//query := db.C("runs").Find(bson.M{}).Sort("-timestamp")
-//total, err := query.Count()
-//if err != nil {
-//total = 0
-//}
-
-//meta := PageMeta{page, size, total}
-
-//query.Limit(size).Skip((page - 1) * size)
-//query.Select(bson.M{"testsuites.testcases": 0, "testsuites.device": 0})
-//query.All(&runs)
-
-//result := &RunsPage{runs, meta}
-
-//return json.NewEncoder(w).Encode(result)
+//return nil
 //}

@@ -4,6 +4,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/wmbest2/rats/api"
 	"github.com/wmbest2/rats/db"
+	"github.com/wmbest2/rats/namedaccess"
 	"testing"
 )
 
@@ -30,7 +31,7 @@ func TestProjectCreation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Then a token should also be generated", func() {
-				namedAccess, err := api.FindNamedAccessByProject(project.Id)
+				namedAccess, err := namedaccess.FindByProject(project.Id)
 				So(err, ShouldBeNil)
 
 				_, err = api.FetchToken(namedAccess)

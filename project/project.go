@@ -2,8 +2,8 @@ package project
 
 import (
 	"fmt"
-	"github.com/wmbest2/rats/api"
 	"github.com/wmbest2/rats/db"
+	"github.com/wmbest2/rats/namedaccess"
 	"time"
 )
 
@@ -22,7 +22,7 @@ func New(name string, createToken bool) (*Project, error) {
 	}
 
 	if createToken {
-		api.NewProjectAccess(fmt.Sprintf("%s project token", name), project.Id)
+		namedaccess.NewWithProject(fmt.Sprintf("%s project token", name), project.Id)
 	}
 
 	return project, err

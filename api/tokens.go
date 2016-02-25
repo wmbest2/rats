@@ -65,7 +65,6 @@ func FindEncryptedToken(token string) (int64, error) {
 
 func FindToken(holder TokenHolder) (*Token, error) {
 	var token Token
-	println(holder.Identifier())
 	err := db.Conn.QueryRow(findToken, holder.Identifier()).Scan(&token.Id,
 		&token.Token,
 		&token.TokenEncrypted,
